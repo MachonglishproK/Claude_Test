@@ -5,13 +5,13 @@ This document provides essential information for AI assistants working with this
 ## Repository Overview
 
 **Repository**: Claude_Test
-**Status**: New/Empty Repository
-**Primary Branch**: `main` (or as configured)
+**Master Branch**: `main` (production-ready code)
+**Default Branch**: `develop` (development integration branch)
 **Last Updated**: 2026-02-01
 
 ### Project Description
 
-This repository is currently in its initial state with no code committed yet. This CLAUDE.md file serves as the foundational documentation that should be updated as the project develops.
+Learning web application built with Vite + React. This repository follows a Git Flow branching strategy.
 
 ## Project Structure
 
@@ -51,11 +51,37 @@ cd Claude_Test
 
 ## Development Workflow
 
+### Branching Strategy (Git Flow)
+
+This repository uses a Git Flow branching strategy:
+
+```
+main (master)          <- Production-ready code (protected)
+  │
+  └── develop          <- Development integration branch (default)
+        │
+        ├── feature/*  <- New features
+        ├── fix/*      <- Bug fixes
+        └── docs/*     <- Documentation updates
+```
+
+#### Branch Descriptions
+
+| Branch | Purpose | Base Branch | Merge Target |
+|--------|---------|-------------|--------------|
+| `main` | Production-ready, stable code | - | - |
+| `develop` | Integration branch for development | `main` | `main` |
+| `feature/*` | New feature development | `develop` | `develop` |
+| `fix/*` | Bug fixes | `develop` | `develop` |
+| `docs/*` | Documentation updates | `develop` | `develop` |
+| `claude/*` | Claude AI session branches | `develop` | `develop` |
+
 ### Branch Naming Convention
 
 - Feature branches: `feature/<description>`
 - Bug fixes: `fix/<description>`
 - Documentation: `docs/<description>`
+- Hotfixes: `hotfix/<description>` (branch from `main`, merge to both `main` and `develop`)
 - Claude AI branches: `claude/<session-id>`
 
 ### Commit Message Format
@@ -73,12 +99,21 @@ Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
 
 ### Pull Request Process
 
-1. Create a feature branch from `main`
+#### For Feature/Fix branches -> develop
+
+1. Create a feature branch from `develop`
 2. Make changes and commit with descriptive messages
-3. Push branch and create a pull request
+3. Push branch and create a pull request to `develop`
 4. Ensure all checks pass
 5. Request review if required
 6. Merge after approval
+
+#### For develop -> main (Release)
+
+1. Ensure `develop` is stable and ready for release
+2. Create a pull request from `develop` to `main`
+3. **Required**: At least one reviewer approval
+4. Merge after approval (creates a release)
 
 ## Code Conventions
 
@@ -175,6 +210,60 @@ Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
 |----------|-------------|----------|
 | - | - | - |
 
+## GitHub Repository Settings
+
+### Required Setup (Manual Configuration)
+
+The following settings must be configured in GitHub repository settings:
+
+#### 1. Create `develop` Branch
+
+```bash
+# From the repository root
+git checkout main
+git checkout -b develop
+git push -u origin develop
+```
+
+#### 2. Set Default Branch to `develop`
+
+1. Go to **Settings** > **General** > **Default branch**
+2. Click the switch button next to the current default branch
+3. Select `develop` from the dropdown
+4. Click **Update**
+5. Confirm the change
+
+#### 3. Configure Branch Protection Rules
+
+##### For `main` branch (Required):
+
+1. Go to **Settings** > **Branches** > **Add branch protection rule**
+2. Branch name pattern: `main`
+3. Enable the following:
+   - [x] **Require a pull request before merging**
+     - [x] Require approvals: **1** (minimum)
+     - [x] Dismiss stale pull request approvals when new commits are pushed
+   - [x] **Require status checks to pass before merging** (if CI is configured)
+   - [x] **Do not allow bypassing the above settings**
+4. Click **Create** / **Save changes**
+
+##### For `develop` branch (Recommended):
+
+1. Go to **Settings** > **Branches** > **Add branch protection rule**
+2. Branch name pattern: `develop`
+3. Enable the following:
+   - [x] **Require a pull request before merging**
+   - [x] **Require status checks to pass before merging** (if CI is configured)
+4. Click **Create** / **Save changes**
+
+### Branch Protection Summary
+
+| Branch | Approval Required | Direct Push | Delete Allowed |
+|--------|-------------------|-------------|----------------|
+| `main` | Yes (1+) | No | No |
+| `develop` | Optional | No | No |
+| `feature/*` | No | Yes | Yes |
+
 ## Troubleshooting
 
 ### Common Issues
@@ -212,9 +301,12 @@ Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
 When working on this repository:
 
 1. **Check the current branch** before making changes
-2. **Review recent commits** to understand ongoing work
-3. **Run existing tests** to ensure baseline functionality
-4. **Update this CLAUDE.md** when significant changes are made to the project structure or conventions
+2. **Always branch from `develop`** for new features and fixes (not from `main`)
+3. **Create PRs to `develop`** unless it's a hotfix
+4. **Review recent commits** to understand ongoing work
+5. **Run existing tests** to ensure baseline functionality
+6. **Update this CLAUDE.md** when significant changes are made to the project structure or conventions
+7. **Never push directly to `main`** - always use a pull request with approval
 
 ---
 
