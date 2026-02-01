@@ -1,0 +1,29 @@
+.memo-field {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  resize: vertical;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.memo-field:focus {
+  outline: none;
+  border-color: #646cff;
+}
+
+.memo-hint {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: #888;
+}
+
+@media (prefers-color-scheme: dark) {
+  .memo-field {
+    background: #2a2a2a;
+    border-color: #444;
+    color: #efefef;
+  }
+}
