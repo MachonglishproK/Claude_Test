@@ -1,29 +1,27 @@
-import { useState } from 'react'
-import { NameDisplay, Counter, Memo } from './components'
-import { useLocalStorage } from './hooks/useLocalStorage'
-import './App.css'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { SettingsProvider } from './hooks/useSettings';
+import { Layout } from './components/Layout';
+import { Dashboard, CheckIn, Goals, Reports, Data, SettingsPage } from './pages';
+import './App.css';
 
 function App() {
-  const [name, setName] = useState('')
-  const [count, setCount] = useState(0)
-  const [memo, setMemo] = useLocalStorage('memo', '')
-
   return (
-    <div className="app">
-      <h1>Hello Claude Code</h1>
-
-      <NameDisplay name={name} onNameChange={setName} />
-
-      <Counter
-        count={count}
-        onIncrement={() => setCount((c) => c + 1)}
-        onDecrement={() => setCount((c) => c - 1)}
-        onReset={() => setCount(0)}
-      />
-
-      <Memo memo={memo} onMemoChange={setMemo} />
-    </div>
-  )
+    <SettingsProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Layout />}>
+            <Route index element={<Navigate to="/dashboard" replace />} />
+            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="checkin" element={<CheckIn />} />
+            <Route path="goals" element={<Goals />} />
+            <Route path="reports" element={<Reports />} />
+            <Route path="data" element={<Data />} />
+            <Route path="settings" element={<SettingsPage />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </SettingsProvider>
+  );
 }
 
-export default App
+export default App;
