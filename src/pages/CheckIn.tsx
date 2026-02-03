@@ -9,9 +9,11 @@ import {
   saveWizardDraft,
   clearWizardDraft,
   getCheckIns,
+  updateStreakOnCheckIn,
 } from '../lib/storage';
 import { getWeekStart, formatWeekRange } from '../lib/date';
-import type { CheckIn as CheckInType } from '../types';
+import { NewBadgeNotification } from '../components/gamification';
+import type { CheckIn as CheckInType, Badge } from '../types';
 
 const schema = z.object({
   mood: z.number().min(1).max(5),
@@ -33,6 +35,8 @@ export function CheckIn() {
   const [showDraftDialog, setShowDraftDialog] = useState(false);
   const [message, setMessage] = useState('');
   const [existingCheckIn, setExistingCheckIn] = useState<CheckInType | null>(null);
+  const [newBadges, setNewBadges] = useState<Badge[]>([]);
+  const [isNewCheckIn, setIsNewCheckIn] = useState(true);
 
   const weekStart = getWeekStart();
 
@@ -68,6 +72,7 @@ export function CheckIn() {
     const existing = checkIns.find((c) => c.weekStart === weekStart);
     if (existing) {
       setExistingCheckIn(existing);
+      setIsNewCheckIn(false);
       reset({
         mood: existing.mood,
         sleep: existing.sleep,
@@ -139,14 +144,38 @@ export function CheckIn() {
 
     await addCheckIn(checkIn);
     await clearWizardDraft();
+
+    // Update streak only for new check-ins (not edits)
+    if (isNewCheckIn) {
+      const badges = await updateStreakOnCheckIn(weekStart);
+      if (badges.length > 0) {
+        setNewBadges(badges);
+      }
+    }
+
     setMessage(t.checkin.submitted);
     setExistingCheckIn(checkIn);
+    setIsNewCheckIn(false);
+  }
+
+  function dismissBadgeNotification() {
+    setNewBadges([]);
   }
 
   const stepTitles = [t.checkin.step1, t.checkin.step2, t.checkin.step3, t.checkin.step4, t.checkin.step5];
 
   return (
     <div className="checkin">
+      {/* Badge Notification */}
+      {settings.gamificationEnabled && newBadges.length > 0 && (
+        <NewBadgeNotification
+          badges={newBadges}
+          language={settings.language}
+          onDismiss={dismissBadgeNotification}
+          title={t.gamification.badges.newBadge}
+        />
+      )}
+
       <h2>{t.checkin.title}</h2>
       <p className="week-label">{formatWeekRange(weekStart, settings.language)}</p>
 
