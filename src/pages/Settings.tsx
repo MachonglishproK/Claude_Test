@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Sparkles } from 'lucide-react';
 import { useSettings } from '../hooks/useSettings';
 
 export function SettingsPage() {
@@ -12,6 +13,11 @@ export function SettingsPage() {
 
   async function handleLanguageChange(language: 'ja' | 'en') {
     await updateSettings({ language });
+    showMessage();
+  }
+
+  async function handleGamificationChange(enabled: boolean) {
+    await updateSettings({ gamificationEnabled: enabled });
     showMessage();
   }
 
@@ -39,6 +45,28 @@ export function SettingsPage() {
         <div className="language-options">
           <button className={`option-btn ${settings.language === 'ja' ? 'selected' : ''}`} onClick={() => handleLanguageChange('ja')}>日本語</button>
           <button className={`option-btn ${settings.language === 'en' ? 'selected' : ''}`} onClick={() => handleLanguageChange('en')}>English</button>
+        </div>
+      </div>
+
+      <div className="settings-section">
+        <div className="settings-header-with-icon">
+          <Sparkles size={18} />
+          <h3>{t.settings.gamification}</h3>
+        </div>
+        <p className="settings-description">{t.settings.gamificationDescription}</p>
+        <div className="gamification-options">
+          <button
+            className={`option-btn ${settings.gamificationEnabled ? 'selected' : ''}`}
+            onClick={() => handleGamificationChange(true)}
+          >
+            {t.settings.gamificationOn}
+          </button>
+          <button
+            className={`option-btn ${!settings.gamificationEnabled ? 'selected' : ''}`}
+            onClick={() => handleGamificationChange(false)}
+          >
+            {t.settings.gamificationOff}
+          </button>
         </div>
       </div>
     </div>

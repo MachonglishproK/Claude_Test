@@ -110,6 +110,9 @@ body {
 }
 
 .nav-link {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
   padding: var(--spacing-sm) var(--spacing-md);
   text-decoration: none;
   color: var(--text-primary);
@@ -117,6 +120,16 @@ body {
   font-size: 0.875rem;
   transition: background-color 0.2s;
   white-space: nowrap;
+}
+
+.nav-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-label {
+  line-height: 1;
 }
 
 .nav-link:hover {
@@ -453,6 +466,34 @@ textarea.error {
   white-space: nowrap;
 }
 
+.goal-quick-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.goal-quick-check:hover {
+  color: var(--success-color);
+  background-color: rgba(76, 175, 80, 0.1);
+}
+
+.dashboard-badges {
+  margin-top: var(--spacing-lg);
+  padding: var(--spacing-md);
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+}
+
 /* ===================================
    Check-in Wizard
    =================================== */
@@ -779,8 +820,27 @@ textarea.error {
   margin-bottom: var(--spacing-md);
 }
 
+.settings-header-with-icon {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  color: var(--accent-color);
+}
+
+.settings-header-with-icon h3 {
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.settings-description {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-md);
+}
+
 .theme-options,
-.language-options {
+.language-options,
+.gamification-options {
   display: flex;
   gap: 0.75rem;
   flex-wrap: wrap;
@@ -1012,5 +1072,484 @@ textarea.error {
 
   .option-btn {
     width: 100%;
+  }
+}
+
+/* ===================================
+   Gamification Styles
+   =================================== */
+
+/* Progress Bar */
+.progress-bar-container {
+  width: 100%;
+}
+
+.progress-bar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-xs);
+}
+
+.progress-bar-label {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.progress-bar-percentage {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.progress-complete-icon {
+  color: var(--success-color);
+}
+
+.progress-bar-track {
+  width: 100%;
+  background-color: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.progress-bar-sm {
+  height: 4px;
+}
+
+.progress-bar-md {
+  height: 8px;
+}
+
+.progress-bar-lg {
+  height: 12px;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background-color: var(--accent-color);
+  border-radius: var(--radius-sm);
+  transition: width 0.3s ease;
+}
+
+.progress-bar-fill.complete {
+  background-color: var(--success-color);
+}
+
+.progress-bar-inline-percentage {
+  display: block;
+  margin-top: var(--spacing-xs);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-align: right;
+}
+
+/* Streak Card */
+.streak-compact {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.streak-icon {
+  color: var(--text-secondary);
+}
+
+.streak-icon.active {
+  color: #ff6b35;
+}
+
+.streak-number {
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.streak-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+}
+
+.streak-main {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.streak-flame {
+  color: var(--text-secondary);
+  padding: var(--spacing-sm);
+  background-color: var(--bg-secondary);
+  border-radius: 50%;
+}
+
+.streak-flame.active {
+  color: #ff6b35;
+  background-color: rgba(255, 107, 53, 0.1);
+}
+
+.streak-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.streak-count {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.streak-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: var(--spacing-xs);
+}
+
+.streak-best {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-sm);
+  padding-top: var(--spacing-sm);
+  border-top: 1px solid var(--border-color);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+/* Badge Display */
+.badge-display {
+  margin-top: var(--spacing-md);
+}
+
+.badge-title {
+  font-size: 0.875rem;
+  margin-bottom: var(--spacing-sm);
+  color: var(--text-secondary);
+}
+
+.badge-empty {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.badge-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.badge-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background-color: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  font-size: 0.75rem;
+  position: relative;
+}
+
+.badge-item.sm {
+  padding: var(--spacing-xs);
+}
+
+.badge-item.lg {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: 0.875rem;
+}
+
+.badge-item.new {
+  background-color: rgba(255, 193, 7, 0.15);
+  border: 1px solid rgba(255, 193, 7, 0.3);
+}
+
+.badge-icon {
+  font-size: 1rem;
+}
+
+.badge-name {
+  color: var(--text-primary);
+}
+
+.badge-new-indicator {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  background-color: #ff6b35;
+  border-radius: 50%;
+}
+
+.badge-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background-color: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+/* Badge Notification */
+.badge-notification {
+  position: fixed;
+  top: 80px;
+  right: var(--spacing-md);
+  z-index: 300;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.badge-notification-content {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background-color: var(--bg-card);
+  border: 1px solid var(--success-color);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  max-width: 320px;
+}
+
+.badge-notification-icon {
+  color: var(--success-color);
+  flex-shrink: 0;
+}
+
+.badge-notification-text {
+  flex: 1;
+}
+
+.badge-notification-text strong {
+  display: block;
+  margin-bottom: var(--spacing-xs);
+}
+
+.badge-notification-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.badge-notification-item {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.badge-notification-dismiss {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.badge-notification-dismiss:hover {
+  color: var(--text-primary);
+}
+
+/* Weekly Summary Card */
+.weekly-summary-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.weekly-summary-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+  color: var(--accent-color);
+}
+
+.weekly-summary-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+.weekly-summary-content {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-md);
+}
+
+.summary-section {
+  padding: var(--spacing-sm) 0;
+}
+
+.summary-section-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-sm);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.summary-count {
+  margin-top: var(--spacing-xs);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.mood-display {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.mood-value {
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.mood-trend {
+  display: flex;
+  align-items: center;
+}
+
+.mood-trend.up {
+  color: var(--success-color);
+}
+
+.mood-trend.down {
+  color: var(--danger-color);
+}
+
+.mood-trend.same {
+  color: var(--text-secondary);
+}
+
+.weekly-summary-encouragement {
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  text-align: center;
+}
+
+.weekly-summary-encouragement.great {
+  background-color: rgba(76, 175, 80, 0.1);
+  color: var(--success-color);
+}
+
+.weekly-summary-encouragement.good {
+  background-color: rgba(74, 144, 217, 0.1);
+  color: var(--accent-color);
+}
+
+.weekly-summary-encouragement.keep_going {
+  background-color: rgba(255, 193, 7, 0.1);
+  color: #f59e0b;
+}
+
+.weekly-summary-encouragement.start_fresh {
+  background-color: var(--bg-secondary);
+  color: var(--text-secondary);
+}
+
+.weekly-summary-encouragement p {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+/* Dashboard Quick Actions */
+.quick-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-md);
+}
+
+.quick-action-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--accent-color);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  text-decoration: none;
+}
+
+.quick-action-btn:hover {
+  background-color: var(--accent-hover);
+}
+
+.quick-action-btn.secondary {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.quick-action-btn.secondary:hover {
+  background-color: var(--border-color);
+}
+
+/* Responsive Gamification */
+@media (min-width: 641px) {
+  .weekly-summary-content {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .summary-section {
+    border-right: 1px solid var(--border-color);
+    padding: 0 var(--spacing-md);
+  }
+
+  .summary-section:last-child {
+    border-right: none;
+  }
+
+  .summary-section:first-child {
+    padding-left: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .badge-notification {
+    left: var(--spacing-md);
+    right: var(--spacing-md);
+  }
+
+  .badge-notification-content {
+    max-width: none;
+  }
+
+  .quick-actions {
+    flex-direction: column;
+  }
+
+  .quick-action-btn {
+    justify-content: center;
   }
 }

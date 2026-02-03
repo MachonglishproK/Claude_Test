@@ -1,19 +1,26 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
+import { Home, PenSquare, Target, BarChart3, Database, Settings } from 'lucide-react';
 import { useSettings } from '../hooks/useSettings';
+
+interface NavItem {
+  to: string;
+  label: string;
+  icon: ReactNode;
+}
 
 export function Navigation() {
   const { t } = useSettings();
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
 
-  const links = [
-    { to: '/dashboard', label: t.nav.dashboard },
-    { to: '/checkin', label: t.nav.checkin },
-    { to: '/goals', label: t.nav.goals },
-    { to: '/reports', label: t.nav.reports },
-    { to: '/data', label: t.nav.data },
-    { to: '/settings', label: t.nav.settings },
+  const links: NavItem[] = [
+    { to: '/dashboard', label: t.nav.dashboard, icon: <Home size={18} /> },
+    { to: '/checkin', label: t.nav.checkin, icon: <PenSquare size={18} /> },
+    { to: '/goals', label: t.nav.goals, icon: <Target size={18} /> },
+    { to: '/reports', label: t.nav.reports, icon: <BarChart3 size={18} /> },
+    { to: '/data', label: t.nav.data, icon: <Database size={18} /> },
+    { to: '/settings', label: t.nav.settings, icon: <Settings size={18} /> },
   ];
 
   // Close menu when route changes
@@ -52,7 +59,8 @@ export function Navigation() {
             to={link.to}
             className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
           >
-            {link.label}
+            <span className="nav-icon">{link.icon}</span>
+            <span className="nav-label">{link.label}</span>
           </NavLink>
         ))}
       </nav>

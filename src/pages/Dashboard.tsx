@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import {
   LineChart,
   Line,
@@ -10,10 +11,12 @@ import {
   BarChart,
   Bar,
 } from 'recharts';
+import { PenSquare, Target, CheckCircle2 } from 'lucide-react';
 import { useSettings } from '../hooks/useSettings';
-import { getCheckIns, getGoals, getGoalProgress } from '../lib/storage';
+import { getCheckIns, getGoals, getGoalProgress, getUserStats, toggleGoalProgress, updateGoalCompletionStats } from '../lib/storage';
 import { getLastNWeeks, getWeekStart, formatDate } from '../lib/date';
-import type { Goal } from '../types';
+import { WeeklySummaryCard, BadgeDisplay, NewBadgeNotification } from '../components/gamification';
+import type { Goal, UserStats, Badge, CheckIn } from '../types';
 
 interface ChartData {
   week: string;
@@ -26,21 +29,29 @@ export function Dashboard() {
   const { t, settings } = useSettings();
   const [chartData, setChartData] = useState<ChartData[]>([]);
   const [incompleteGoals, setIncompleteGoals] = useState<Goal[]>([]);
+  const [allGoals, setAllGoals] = useState<Goal[]>([]);
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
+  const [currentCheckIn, setCurrentCheckIn] = useState<CheckIn | null>(null);
+  const [previousCheckIn, setPreviousCheckIn] = useState<CheckIn | null>(null);
+  const [newBadges, setNewBadges] = useState<Badge[]>([]);
+  const [goalsCompletedThisWeek, setGoalsCompletedThisWeek] = useState(0);
   const [loading, setLoading] = useState(true);
+
+  const currentWeek = getWeekStart();
 
   useEffect(() => {
     loadData();
   }, []);
 
   async function loadData() {
-    const [checkIns, goals, progress] = await Promise.all([
+    const [checkIns, goals, progress, stats] = await Promise.all([
       getCheckIns(),
       getGoals(),
       getGoalProgress(),
+      getUserStats(),
     ]);
 
     const weeks = getLastNWeeks(8);
-    const currentWeek = getWeekStart();
 
     const data: ChartData[] = weeks.map((week) => {
       const checkIn = checkIns.find((c) => c.weekStart === week);
@@ -61,17 +72,89 @@ export function Dashboard() {
     const completedGoalIds = new Set(currentProgress.map((p) => p.goalId));
     const incomplete = goals.filter((g) => !completedGoalIds.has(g.id));
     setIncompleteGoals(incomplete);
+    setAllGoals(goals);
+    setGoalsCompletedThisWeek(currentProgress.length);
 
+    // Get current and previous check-in for mood comparison
+    const sortedCheckIns = [...checkIns].sort((a, b) => b.weekStart.localeCompare(a.weekStart));
+    const current = sortedCheckIns.find(c => c.weekStart === currentWeek) || null;
+    const previous = sortedCheckIns.find(c => c.weekStart !== currentWeek) || null;
+    setCurrentCheckIn(current);
+    setPreviousCheckIn(previous);
+
+    setUserStats(stats);
     setLoading(false);
+  }
+
+  async function handleQuickToggleGoal(goalId: string) {
+    await toggleGoalProgress(goalId, currentWeek);
+    const badges = await updateGoalCompletionStats();
+    if (badges.length > 0) {
+      setNewBadges(badges);
+    }
+    await loadData();
+  }
+
+  function dismissBadgeNotification() {
+    setNewBadges([]);
   }
 
   if (loading) {
     return <div className="loading">{t.common.loading}</div>;
   }
 
+  const gamificationEnabled = settings.gamificationEnabled;
+
   return (
     <div className="dashboard">
       <h2>{t.dashboard.title}</h2>
+
+      {/* Badge Notification */}
+      {gamificationEnabled && newBadges.length > 0 && (
+        <NewBadgeNotification
+          badges={newBadges}
+          language={settings.language}
+          onDismiss={dismissBadgeNotification}
+          title={t.gamification.badges.newBadge}
+        />
+      )}
+
+      {/* Weekly Summary Card - Gamification */}
+      {gamificationEnabled && userStats && (
+        <WeeklySummaryCard
+          goalsCompleted={goalsCompletedThisWeek}
+          totalGoals={allGoals.length}
+          mood={currentCheckIn?.mood ?? null}
+          previousMood={previousCheckIn?.mood ?? null}
+          streakDays={userStats.currentStreak}
+          longestStreak={userStats.longestStreak}
+          translations={{
+            title: t.gamification.weeklySummary.title,
+            goalsProgress: t.gamification.weeklySummary.goalsProgress,
+            moodTrend: t.gamification.weeklySummary.moodTrend,
+            streak: t.gamification.weeklySummary.streak,
+            streakLabel: t.gamification.weeklySummary.streakLabel,
+            encouragements: t.gamification.weeklySummary.encouragements,
+            moodLabels: [...t.checkin.moodLabels],
+          }}
+        />
+      )}
+
+      {/* Quick Actions */}
+      <div className="quick-actions">
+        {!currentCheckIn && (
+          <Link to="/checkin" className="quick-action-btn">
+            <PenSquare size={16} />
+            {t.dashboard.quickCheckin}
+          </Link>
+        )}
+        {allGoals.length === 0 && (
+          <Link to="/goals" className="quick-action-btn secondary">
+            <Target size={16} />
+            {t.dashboard.emptyState.addGoal}
+          </Link>
+        )}
+      </div>
 
       <div className="charts-grid">
         <div className="chart-card">
@@ -125,6 +208,13 @@ export function Dashboard() {
           <ul className="goal-list">
             {incompleteGoals.map((goal) => (
               <li key={goal.id} className="goal-item">
+                <button
+                  className="goal-quick-check"
+                  onClick={() => handleQuickToggleGoal(goal.id)}
+                  aria-label={`Mark ${goal.title} as complete`}
+                >
+                  <CheckCircle2 size={20} />
+                </button>
                 <span className="goal-title">{goal.title}</span>
                 <span className="goal-category">{t.goals.categories[goal.category]}</span>
               </li>
@@ -132,6 +222,19 @@ export function Dashboard() {
           </ul>
         )}
       </div>
+
+      {/* Badges Section - Gamification */}
+      {gamificationEnabled && userStats && userStats.badges.length > 0 && (
+        <div className="dashboard-badges">
+          <BadgeDisplay
+            badges={userStats.badges}
+            language={settings.language}
+            title={t.gamification.badges.title}
+            showEmpty={false}
+            maxDisplay={6}
+          />
+        </div>
+      )}
     </div>
   );
 }

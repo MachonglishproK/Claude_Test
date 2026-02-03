@@ -138,6 +138,10 @@ export const translations = {
       dark: 'ダーク',
       language: '言語',
       saved: '設定を保存しました',
+      gamification: 'ゲーミフィケーション',
+      gamificationDescription: 'ストリーク、バッジ、進捗表示などの機能',
+      gamificationOn: 'オン',
+      gamificationOff: 'オフ',
     },
     common: {
       loading: '読み込み中...',
@@ -146,6 +150,30 @@ export const translations = {
       cancel: 'キャンセル',
       done: '完了',
       skip: 'スキップ',
+    },
+    gamification: {
+      weeklySummary: {
+        title: '今週のサマリー',
+        goalsProgress: '目標の進捗',
+        moodTrend: '気分の変化',
+        streak: '継続記録',
+        streakLabel: { current: '週連続', longest: '最長' },
+        encouragements: {
+          great: '素晴らしい！目標をほぼ達成しています！',
+          good: 'いい調子です！あと少しで達成です！',
+          keep_going: '一歩ずつ進んでいます。続けましょう！',
+          start_fresh: '新しい週のスタートです。頑張りましょう！',
+        },
+      },
+      badges: {
+        title: '獲得バッジ',
+        empty: 'まだバッジはありません',
+        newBadge: '新しいバッジを獲得しました！',
+      },
+      streak: {
+        current: '週連続',
+        longest: '最長記録',
+      },
     },
   },
   en: {
@@ -287,6 +315,10 @@ export const translations = {
       dark: 'Dark',
       language: 'Language',
       saved: 'Settings saved',
+      gamification: 'Gamification',
+      gamificationDescription: 'Streaks, badges, and progress displays',
+      gamificationOn: 'On',
+      gamificationOff: 'Off',
     },
     common: {
       loading: 'Loading...',
@@ -295,6 +327,30 @@ export const translations = {
       cancel: 'Cancel',
       done: 'Done',
       skip: 'Skip',
+    },
+    gamification: {
+      weeklySummary: {
+        title: 'This Week Summary',
+        goalsProgress: 'Goals Progress',
+        moodTrend: 'Mood Trend',
+        streak: 'Streak',
+        streakLabel: { current: 'Week Streak', longest: 'Best' },
+        encouragements: {
+          great: 'Amazing! You\'re crushing your goals!',
+          good: 'Great progress! Almost there!',
+          keep_going: 'Every step counts. Keep going!',
+          start_fresh: 'Fresh start! Let\'s do this!',
+        },
+      },
+      badges: {
+        title: 'Earned Badges',
+        empty: 'No badges yet',
+        newBadge: 'New badge earned!',
+      },
+      streak: {
+        current: 'Week Streak',
+        longest: 'Best Streak',
+      },
     },
   },
 } as const;

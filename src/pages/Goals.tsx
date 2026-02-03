@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { Plus } from 'lucide-react';
 import { useSettings } from '../hooks/useSettings';
-import { getGoals, addGoal, updateGoal, deleteGoal, getGoalProgress, toggleGoalProgress } from '../lib/storage';
+import { getGoals, addGoal, updateGoal, deleteGoal, getGoalProgress, toggleGoalProgress, updateGoalCompletionStats } from '../lib/storage';
 import { getWeekStart } from '../lib/date';
-import type { Goal, GoalProgress } from '../types';
+import { NewBadgeNotification } from '../components/gamification';
+import type { Goal, GoalProgress, Badge } from '../types';
 
 const schema = z.object({
   title: z.string().min(1, 'Required'),
@@ -18,11 +20,12 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 export function Goals() {
-  const { t } = useSettings();
+  const { t, settings } = useSettings();
   const [goals, setGoals] = useState<Goal[]>([]);
   const [progress, setProgress] = useState<GoalProgress[]>([]);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [newBadges, setNewBadges] = useState<Badge[]>([]);
 
   const weekStart = getWeekStart();
 
@@ -71,7 +74,15 @@ export function Goals() {
 
   async function handleToggleProgress(goalId: string) {
     await toggleGoalProgress(goalId, weekStart);
+    const badges = await updateGoalCompletionStats();
+    if (badges.length > 0) {
+      setNewBadges(badges);
+    }
     await loadData();
+  }
+
+  function dismissBadgeNotification() {
+    setNewBadges([]);
   }
 
   function isGoalDone(goalId: string): boolean {
@@ -80,9 +91,22 @@ export function Goals() {
 
   return (
     <div className="goals">
+      {/* Badge Notification */}
+      {settings.gamificationEnabled && newBadges.length > 0 && (
+        <NewBadgeNotification
+          badges={newBadges}
+          language={settings.language}
+          onDismiss={dismissBadgeNotification}
+          title={t.gamification.badges.newBadge}
+        />
+      )}
+
       <div className="page-header">
         <h2>{t.goals.title}</h2>
-        <button className="btn btn-primary" onClick={openAddForm}>{t.goals.add}</button>
+        <button className="btn btn-primary" onClick={openAddForm}>
+          <Plus size={18} />
+          {t.goals.add}
+        </button>
       </div>
 
       <h3 className="section-title">{t.goals.thisWeek}</h3>
