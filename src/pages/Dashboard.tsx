@@ -13,11 +13,11 @@ import {
 } from 'recharts';
 import { PenSquare, Target, CheckCircle2 } from 'lucide-react';
 import { useSettings } from '../hooks/useSettings';
-import { getCheckIns, getGoals, getGoalProgress, getUserStats, toggleGoalProgress, updateGoalCompletionStats, getCompanionData, getCompanionSettings, getMissions, updateMissionProgress, addCompanionXP } from '../lib/storage';
+import { getCheckIns, getGoals, getGoalProgress, getUserStats, toggleGoalProgress, updateGoalCompletionStats, getCompanionData, getCompanionSettings, getMissions, updateMissionProgress, addCompanionXP, getCollectionSettings, addProgressToAllEggs, EGG_PROGRESS_VALUES } from '../lib/storage';
 import { getLastNWeeks, getWeekStart, formatDate } from '../lib/date';
 import { WeeklySummaryCard, BadgeDisplay, NewBadgeNotification } from '../components/gamification';
-import { CompanionWidget, CompanionEmptyState, MissionList } from '../components/companion';
-import type { Goal, UserStats, Badge, CheckIn, CompanionData, CompanionSettings, MissionProgress } from '../types';
+import { CompanionWidget, CompanionEmptyState, MissionList, EggSummary } from '../components/companion';
+import type { Goal, UserStats, Badge, CheckIn, CompanionData, CompanionSettings, MissionProgress, CollectionSettings } from '../types';
 
 interface ChartData {
   week: string;
@@ -38,6 +38,7 @@ export function Dashboard() {
   const [goalsCompletedThisWeek, setGoalsCompletedThisWeek] = useState(0);
   const [companionData, setCompanionData] = useState<CompanionData | null>(null);
   const [companionSettings, setCompanionSettings] = useState<CompanionSettings | null>(null);
+  const [collectionSettings, setCollectionSettings] = useState<CollectionSettings | null>(null);
   const [missions, setMissions] = useState<MissionProgress | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -48,18 +49,20 @@ export function Dashboard() {
   }, []);
 
   async function loadData() {
-    const [checkIns, goals, progress, stats, compData, compSettings, missionData] = await Promise.all([
+    const [checkIns, goals, progress, stats, compData, compSettings, collSettings, missionData] = await Promise.all([
       getCheckIns(),
       getGoals(),
       getGoalProgress(),
       getUserStats(),
       getCompanionData(),
       getCompanionSettings(),
+      getCollectionSettings(),
       getMissions(),
     ]);
 
     setCompanionData(compData);
     setCompanionSettings(compSettings);
+    setCollectionSettings(collSettings);
     setMissions(missionData);
 
     // Update mission progress for visiting dashboard
@@ -114,6 +117,11 @@ export function Dashboard() {
       await addCompanionXP(10); // +10 XP for completing a goal
       await updateMissionProgress('mission_complete_goal');
       await updateMissionProgress('mission_complete_3_goals');
+    }
+
+    // Add progress to eggs when completing a goal
+    if (collectionSettings?.showCollection) {
+      await addProgressToAllEggs(EGG_PROGRESS_VALUES.goalComplete);
     }
 
     await loadData();
@@ -181,6 +189,18 @@ export function Dashboard() {
             xpReward: t.missions.xpReward,
             missionTitles: t.missions.missionTitles,
             missionDescriptions: t.missions.missionDescriptions,
+          }}
+        />
+      )}
+
+      {/* Egg Summary - Collection System */}
+      {collectionSettings?.showCollection && collectionSettings?.showEggProgress && (
+        <EggSummary
+          language={settings.language}
+          translations={{
+            incubator: t.egg.incubator,
+            noEggs: t.egg.noEggs,
+            readyToHatch: t.egg.readyToHatch,
           }}
         />
       )}

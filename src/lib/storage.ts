@@ -1,5 +1,5 @@
 import localforage from 'localforage';
-import type { Goal, CheckIn, GoalProgress, WizardDraft, Settings, UserStats, Badge, BadgeType, CompanionData, CompanionSettings, CompanionId, CompanionInfo, MissionProgress, Mission } from '../types';
+import type { Goal, CheckIn, GoalProgress, WizardDraft, Settings, UserStats, Badge, BadgeType, CompanionData, CompanionSettings, CompanionId, CompanionInfo, MissionProgress, Mission, Egg, EggType, EggTypeInfo, CollectionData, CollectionEntry, CollectionSettings, HatchingResult } from '../types';
 
 localforage.config({
   driver: localforage.INDEXEDDB,
@@ -17,6 +17,8 @@ const KEYS = {
   COMPANION_DATA: 'companion_data',
   COMPANION_SETTINGS: 'companion_settings',
   MISSIONS: 'missions',
+  COLLECTION_DATA: 'collection_data',
+  COLLECTION_SETTINGS: 'collection_settings',
 } as const;
 
 export async function getGoals(): Promise<Goal[]> {
@@ -712,3 +714,228 @@ export async function updateMissionProgress(
 
   return { completed, xpEarned };
 }
+
+// ===================================
+// Egg & Collection System Functions
+// ===================================
+
+export const EGG_TYPES: Record<EggType, EggTypeInfo> = {
+  gentle: {
+    type: 'gentle',
+    name: { ja: 'やさしさのたまご', en: 'Gentle Egg' },
+    description: { ja: '穏やかなエネルギーを感じる', en: 'You sense a calm energy' },
+    emoji: '🥚',
+    crackEmoji: '🐣',
+    possibleCompanions: ['sprout', 'mochi', 'nimbus', 'pebble'],
+  },
+  energetic: {
+    type: 'energetic',
+    name: { ja: 'げんきのたまご', en: 'Energetic Egg' },
+    description: { ja: '元気いっぱいに揺れている', en: 'It wiggles energetically' },
+    emoji: '🪺',
+    crackEmoji: '🐥',
+    possibleCompanions: ['kaze', 'glim', 'ember', 'ripple'],
+  },
+  curious: {
+    type: 'curious',
+    name: { ja: 'ふしぎのたまご', en: 'Curious Egg' },
+    description: { ja: '何が生まれるかわからない', en: 'Who knows what will hatch?' },
+    emoji: '✨',
+    crackEmoji: '🌟',
+    possibleCompanions: ['ember', 'sprout', 'nimbus', 'pebble', 'ripple', 'glim', 'mochi', 'kaze'],
+  },
+};
+
+const DEFAULT_COLLECTION_DATA: CollectionData = {
+  entries: [],
+  eggs: [],
+  maxEggs: 3,
+  totalHatched: 0,
+};
+
+const DEFAULT_COLLECTION_SETTINGS: CollectionSettings = {
+  showCollection: true,
+  showEggProgress: true,
+  skipHatchingAnimation: false,
+  skipEvolutionAnimation: false,
+};
+
+export async function getCollectionData(): Promise<CollectionData> {
+  const data = await localforage.getItem<CollectionData>(KEYS.COLLECTION_DATA);
+  return data || DEFAULT_COLLECTION_DATA;
+}
+
+export async function saveCollectionData(data: CollectionData): Promise<void> {
+  await localforage.setItem(KEYS.COLLECTION_DATA, data);
+}
+
+export async function getCollectionSettings(): Promise<CollectionSettings> {
+  const settings = await localforage.getItem<CollectionSettings>(KEYS.COLLECTION_SETTINGS);
+  return settings || DEFAULT_COLLECTION_SETTINGS;
+}
+
+export async function saveCollectionSettings(settings: CollectionSettings): Promise<void> {
+  await localforage.setItem(KEYS.COLLECTION_SETTINGS, settings);
+}
+
+export async function createEgg(type?: EggType): Promise<Egg | null> {
+  const data = await getCollectionData();
+
+  // Check if max eggs reached
+  if (data.eggs.length >= data.maxEggs) {
+    return null;
+  }
+
+  // Random type if not specified
+  const eggType = type || (['gentle', 'energetic', 'curious'] as EggType[])[Math.floor(Math.random() * 3)];
+
+  const egg: Egg = {
+    id: crypto.randomUUID(),
+    type: eggType,
+    progress: 0,
+    createdAt: new Date().toISOString(),
+    lastProgressAt: null,
+  };
+
+  data.eggs.push(egg);
+  await saveCollectionData(data);
+  return egg;
+}
+
+export async function addEggProgress(
+  eggId: string,
+  amount: number
+): Promise<{ egg: Egg | null; readyToHatch: boolean }> {
+  const data = await getCollectionData();
+  const egg = data.eggs.find(e => e.id === eggId);
+
+  if (!egg) {
+    return { egg: null, readyToHatch: false };
+  }
+
+  egg.progress = Math.min(100, egg.progress + amount);
+  egg.lastProgressAt = new Date().toISOString();
+
+  await saveCollectionData(data);
+  return { egg, readyToHatch: egg.progress >= 100 };
+}
+
+export async function addProgressToAllEggs(amount: number): Promise<{ eggs: Egg[]; readyToHatch: Egg[] }> {
+  const data = await getCollectionData();
+  const readyToHatch: Egg[] = [];
+
+  for (const egg of data.eggs) {
+    const wasReady = egg.progress >= 100;
+    egg.progress = Math.min(100, egg.progress + amount);
+    egg.lastProgressAt = new Date().toISOString();
+
+    if (!wasReady && egg.progress >= 100) {
+      readyToHatch.push(egg);
+    }
+  }
+
+  await saveCollectionData(data);
+  return { eggs: data.eggs, readyToHatch };
+}
+
+export async function hatchEgg(eggId: string): Promise<HatchingResult | null> {
+  const data = await getCollectionData();
+  const eggIndex = data.eggs.findIndex(e => e.id === eggId);
+
+  if (eggIndex === -1) {
+    return null;
+  }
+
+  const egg = data.eggs[eggIndex];
+  if (egg.progress < 100) {
+    return null;
+  }
+
+  const eggTypeInfo = EGG_TYPES[egg.type];
+  const possibleCompanions = eggTypeInfo.possibleCompanions;
+
+  // Determine companion with slight randomness
+  // Rare chance (5%) for any companion regardless of egg type
+  const isRare = Math.random() < 0.05;
+  let companionId: CompanionId;
+
+  if (isRare) {
+    const allCompanions: CompanionId[] = ['ember', 'sprout', 'nimbus', 'pebble', 'ripple', 'glim', 'mochi', 'kaze'];
+    companionId = allCompanions[Math.floor(Math.random() * allCompanions.length)];
+  } else {
+    companionId = possibleCompanions[Math.floor(Math.random() * possibleCompanions.length)];
+  }
+
+  // Remove egg from list
+  data.eggs.splice(eggIndex, 1);
+
+  // Add to collection
+  const entry: CollectionEntry = {
+    companionId,
+    stage: 1,
+    acquiredAt: new Date().toISOString(),
+    source: 'hatched',
+    eggType: egg.type,
+  };
+  data.entries.push(entry);
+  data.totalHatched += 1;
+
+  await saveCollectionData(data);
+
+  return {
+    companionId,
+    eggType: egg.type,
+    isRare,
+  };
+}
+
+export async function addToCollection(companionId: CompanionId, stage: number, source: 'selected' | 'hatched'): Promise<void> {
+  const data = await getCollectionData();
+
+  // Check if already in collection at this stage
+  const existing = data.entries.find(
+    e => e.companionId === companionId && e.stage === stage
+  );
+
+  if (!existing) {
+    data.entries.push({
+      companionId,
+      stage: stage as 1 | 2 | 3,
+      acquiredAt: new Date().toISOString(),
+      source,
+    });
+    await saveCollectionData(data);
+  }
+}
+
+export async function getCollectionStats(): Promise<{
+  totalCompanions: number;
+  uniqueCompanions: number;
+  totalEggs: number;
+  eggsHatched: number;
+  completionPercentage: number;
+}> {
+  const data = await getCollectionData();
+  const allCompanions: CompanionId[] = ['ember', 'sprout', 'nimbus', 'pebble', 'ripple', 'glim', 'mochi', 'kaze'];
+  const totalPossible = allCompanions.length * 3; // 8 companions x 3 stages
+
+  const uniqueCompanions = new Set(data.entries.map(e => e.companionId)).size;
+  const completionPercentage = Math.round((data.entries.length / totalPossible) * 100);
+
+  return {
+    totalCompanions: data.entries.length,
+    uniqueCompanions,
+    totalEggs: data.eggs.length,
+    eggsHatched: data.totalHatched,
+    completionPercentage,
+  };
+}
+
+// Progress values for different actions
+export const EGG_PROGRESS_VALUES = {
+  taskComplete: 10,
+  weeklyCheckin: 20,
+  goalComplete: 5,
+  dailyVisit: 3,
+  missionComplete: 8,
+} as const;
