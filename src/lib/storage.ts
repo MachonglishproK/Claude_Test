@@ -1,5 +1,5 @@
 import localforage from 'localforage';
-import type { Goal, CheckIn, GoalProgress, WizardDraft, Settings, UserStats, Badge, BadgeType } from '../types';
+import type { Goal, CheckIn, GoalProgress, WizardDraft, Settings, UserStats, Badge, BadgeType, CompanionData, CompanionSettings, CompanionId, CompanionInfo, MissionProgress, Mission } from '../types';
 
 localforage.config({
   driver: localforage.INDEXEDDB,
@@ -14,6 +14,9 @@ const KEYS = {
   WIZARD_DRAFT: 'wizard_draft',
   SETTINGS: 'settings',
   USER_STATS: 'user_stats',
+  COMPANION_DATA: 'companion_data',
+  COMPANION_SETTINGS: 'companion_settings',
+  MISSIONS: 'missions',
 } as const;
 
 export async function getGoals(): Promise<Goal[]> {
@@ -320,4 +323,392 @@ export function getBadgeInfo(type: BadgeType): { icon: string; name: { ja: strin
     },
   };
   return badges[type];
+}
+
+// ===================================
+// Companion System Functions
+// ===================================
+
+export const COMPANIONS: Record<CompanionId, CompanionInfo> = {
+  ember: {
+    id: 'ember',
+    name: { ja: 'エンバー', en: 'Ember' },
+    description: { ja: '温かく安定した光で照らす', en: 'Illuminates with warm, steady light' },
+    personality: { ja: 'コツコツ型', en: 'Steady & Consistent' },
+    supportStyle: { ja: '毎日少しずつ、一緒に進もう', en: "Let's take it one step at a time" },
+    emoji: '🕯️',
+    evolutionEmojis: ['🕯️', '🏮', '🗼'],
+    color: '#ff9f43',
+  },
+  sprout: {
+    id: 'sprout',
+    name: { ja: 'スプラウト', en: 'Sprout' },
+    description: { ja: '成長を見守る優しい存在', en: 'Nurturing your growth gently' },
+    personality: { ja: 'じっくり型', en: 'Patient & Nurturing' },
+    supportStyle: { ja: '焦らなくていいよ、芽は必ず出る', en: 'No rush, growth takes time' },
+    emoji: '🌱',
+    evolutionEmojis: ['🌱', '🌿', '🌳'],
+    color: '#26de81',
+  },
+  nimbus: {
+    id: 'nimbus',
+    name: { ja: 'ニンバス', en: 'Nimbus' },
+    description: { ja: '夢を見る雲のような楽観家', en: 'A dreamy cloud with silver linings' },
+    personality: { ja: 'ポジティブ型', en: 'Dreamy & Optimistic' },
+    supportStyle: { ja: 'きっと大丈夫、空は晴れる', en: "The sky will clear, don't worry" },
+    emoji: '☁️',
+    evolutionEmojis: ['☁️', '⛅', '🌈'],
+    color: '#a29bfe',
+  },
+  pebble: {
+    id: 'pebble',
+    name: { ja: 'ペブル', en: 'Pebble' },
+    description: { ja: '揺るがない頼れる存在', en: 'Solid and dependable as stone' },
+    personality: { ja: '堅実型', en: 'Steady & Reliable' },
+    supportStyle: { ja: '一歩一歩、確実に進もう', en: 'One solid step at a time' },
+    emoji: '🪨',
+    evolutionEmojis: ['🪨', '⛰️', '🏔️'],
+    color: '#636e72',
+  },
+  ripple: {
+    id: 'ripple',
+    name: { ja: 'リップル', en: 'Ripple' },
+    description: { ja: '柔軟に流れる適応力', en: 'Flows and adapts like water' },
+    personality: { ja: '柔軟型', en: 'Adaptable & Flowing' },
+    supportStyle: { ja: '流れに乗って、自然体でいこう', en: 'Go with the flow, be natural' },
+    emoji: '💧',
+    evolutionEmojis: ['💧', '🌊', '🌏'],
+    color: '#0984e3',
+  },
+  glim: {
+    id: 'glim',
+    name: { ja: 'グリム', en: 'Glim' },
+    description: { ja: '好奇心いっぱいの小さな光', en: 'A curious little spark of light' },
+    personality: { ja: '探求型', en: 'Curious & Playful' },
+    supportStyle: { ja: '新しい発見、一緒にしよう！', en: "Let's discover something new!" },
+    emoji: '✨',
+    evolutionEmojis: ['✨', '🪲', '⭐'],
+    color: '#fdcb6e',
+  },
+  mochi: {
+    id: 'mochi',
+    name: { ja: 'モチ', en: 'Mochi' },
+    description: { ja: 'ふわふわ癒し系のお餅', en: 'Soft and squishy comfort' },
+    personality: { ja: '癒し型', en: 'Soft & Comforting' },
+    supportStyle: { ja: '無理しないでね、休むのも大事', en: "Don't push too hard, rest is okay" },
+    emoji: '🍡',
+    evolutionEmojis: ['🍡', '🧁', '☁️'],
+    color: '#fd79a8',
+  },
+  kaze: {
+    id: 'kaze',
+    name: { ja: 'カゼ', en: 'Kaze' },
+    description: { ja: 'エネルギッシュな風の精霊', en: 'An energetic wind spirit' },
+    personality: { ja: '行動型', en: 'Energetic & Action-oriented' },
+    supportStyle: { ja: 'さあ、今日も駆け抜けよう！', en: "Let's go, full speed ahead!" },
+    emoji: '💨',
+    evolutionEmojis: ['💨', '🌀', '🌪️'],
+    color: '#00cec9',
+  },
+};
+
+const DEFAULT_COMPANION_SETTINGS: CompanionSettings = {
+  enabled: true,
+  animationsEnabled: true,
+  selectedCompanionId: null,
+};
+
+export async function getCompanionSettings(): Promise<CompanionSettings> {
+  const settings = await localforage.getItem<CompanionSettings>(KEYS.COMPANION_SETTINGS);
+  return settings || DEFAULT_COMPANION_SETTINGS;
+}
+
+export async function saveCompanionSettings(settings: CompanionSettings): Promise<void> {
+  await localforage.setItem(KEYS.COMPANION_SETTINGS, settings);
+}
+
+export async function getCompanionData(): Promise<CompanionData | null> {
+  return await localforage.getItem<CompanionData>(KEYS.COMPANION_DATA);
+}
+
+export async function saveCompanionData(data: CompanionData): Promise<void> {
+  await localforage.setItem(KEYS.COMPANION_DATA, data);
+}
+
+export async function selectCompanion(companionId: CompanionId): Promise<CompanionData> {
+  const existing = await getCompanionData();
+  const now = new Date().toISOString();
+
+  const newData: CompanionData = {
+    id: companionId,
+    xp: existing?.xp || 0,
+    level: existing?.level || 1,
+    evolution: existing?.evolution || 1,
+    selectedAt: now,
+    lastInteraction: now,
+  };
+
+  await saveCompanionData(newData);
+
+  // Also update companion settings
+  const settings = await getCompanionSettings();
+  settings.selectedCompanionId = companionId;
+  await saveCompanionSettings(settings);
+
+  return newData;
+}
+
+function calculateLevelFromXP(xp: number): { level: number; evolution: 1 | 2 | 3 } {
+  const level = Math.min(30, Math.floor(xp / 100) + 1);
+  let evolution: 1 | 2 | 3 = 1;
+  if (level >= 20) evolution = 3;
+  else if (level >= 10) evolution = 2;
+  return { level, evolution };
+}
+
+export async function addCompanionXP(amount: number): Promise<{ levelUp: boolean; evolved: boolean; newLevel: number; newEvolution: 1 | 2 | 3 }> {
+  const data = await getCompanionData();
+  if (!data) return { levelUp: false, evolved: false, newLevel: 1, newEvolution: 1 };
+
+  const oldLevel = data.level;
+  const oldEvolution = data.evolution;
+
+  data.xp += amount;
+  const { level, evolution } = calculateLevelFromXP(data.xp);
+  data.level = level;
+  data.evolution = evolution;
+  data.lastInteraction = new Date().toISOString();
+
+  await saveCompanionData(data);
+
+  return {
+    levelUp: level > oldLevel,
+    evolved: evolution > oldEvolution,
+    newLevel: level,
+    newEvolution: evolution,
+  };
+}
+
+export function getCompanionState(data: CompanionData | null, isInCheckIn: boolean, allGoalsDone: boolean): 'sleeping' | 'calm' | 'happy' | 'excited' | 'focused' | 'proud' {
+  if (!data) return 'calm';
+
+  const hour = new Date().getHours();
+
+  // Early morning or late night = sleeping
+  if (hour < 6 || hour >= 23) return 'sleeping';
+
+  // In check-in wizard = focused
+  if (isInCheckIn) return 'focused';
+
+  // All goals done this week = proud
+  if (allGoalsDone) return 'proud';
+
+  // Recently interacted (within 5 minutes) = happy
+  if (data.lastInteraction) {
+    const lastInteraction = new Date(data.lastInteraction).getTime();
+    const now = Date.now();
+    if (now - lastInteraction < 5 * 60 * 1000) return 'happy';
+  }
+
+  return 'calm';
+}
+
+export function getCompanionMessage(
+  state: 'sleeping' | 'calm' | 'happy' | 'excited' | 'focused' | 'proud',
+  companionId: CompanionId,
+  language: 'ja' | 'en'
+): string {
+  const messages: Record<CompanionId, Record<string, { ja: string; en: string }>> = {
+    ember: {
+      sleeping: { ja: 'zzz... 💤', en: 'zzz... 💤' },
+      calm: { ja: '今日も一緒にがんばろう', en: "Let's do our best today" },
+      happy: { ja: 'やったね！いい調子！', en: 'Great job! Keep it up!' },
+      excited: { ja: 'すごい！ピカピカだね！', en: 'Amazing! You shine bright!' },
+      focused: { ja: 'じっくり振り返ろう', en: "Let's reflect carefully" },
+      proud: { ja: '今週も最高だったね！', en: 'This week was awesome!' },
+    },
+    sprout: {
+      sleeping: { ja: 'すやすや... 🌙', en: 'sleeping... 🌙' },
+      calm: { ja: '今日も少しずつ成長しよう', en: "Let's grow a little today" },
+      happy: { ja: '芽が伸びてきたよ！', en: 'The sprout is growing!' },
+      excited: { ja: 'ぐんぐん成長中！', en: 'Growing so fast!' },
+      focused: { ja: '根を張る時間だね', en: 'Time to put down roots' },
+      proud: { ja: '立派に育ったね！', en: "You've grown so well!" },
+    },
+    nimbus: {
+      sleeping: { ja: 'ふわふわ... ☁️', en: 'floating... ☁️' },
+      calm: { ja: '今日はいい天気になりそう', en: 'Looks like a nice day' },
+      happy: { ja: '虹が見えそう！', en: 'I see a rainbow coming!' },
+      excited: { ja: 'わーい！晴れ晴れ！', en: 'Yay! Clear skies!' },
+      focused: { ja: '空を見上げて深呼吸', en: 'Look up and breathe deep' },
+      proud: { ja: '今週は最高の青空！', en: 'Blue skies all week!' },
+    },
+    pebble: {
+      sleeping: { ja: 'ごろん... 🪨', en: 'resting... 🪨' },
+      calm: { ja: '今日も一歩ずつ', en: 'One step at a time today' },
+      happy: { ja: '着実に進んでいるね', en: "You're making progress" },
+      excited: { ja: '山が動いた！', en: 'Mountains are moving!' },
+      focused: { ja: '土台を固めよう', en: "Let's build a solid base" },
+      proud: { ja: '揺るがない一週間だった！', en: 'A rock-solid week!' },
+    },
+    ripple: {
+      sleeping: { ja: 'さらさら... 💤', en: 'flowing... 💤' },
+      calm: { ja: '流れに身を任せて', en: 'Go with the flow' },
+      happy: { ja: '波紋が広がっていく！', en: 'Ripples are spreading!' },
+      excited: { ja: '大きな波が来た！', en: 'A big wave is coming!' },
+      focused: { ja: '静かな水面で考えよう', en: 'Reflect on calm waters' },
+      proud: { ja: '素敵な流れだったね！', en: 'What a beautiful flow!' },
+    },
+    glim: {
+      sleeping: { ja: 'ちかちか... ✨', en: 'flickering... ✨' },
+      calm: { ja: '今日は何を発見しよう？', en: 'What will we discover?' },
+      happy: { ja: 'キラキラ！見つけた！', en: 'Sparkle! Found it!' },
+      excited: { ja: 'ピカーン！すごい発見！', en: 'Wow! Amazing discovery!' },
+      focused: { ja: 'じっくり観察中...', en: 'Observing carefully...' },
+      proud: { ja: '今週もたくさん発見したね！', en: 'So many discoveries!' },
+    },
+    mochi: {
+      sleeping: { ja: 'もちもち... 💤', en: 'squishy... 💤' },
+      calm: { ja: 'のんびりいこうね', en: "Let's take it easy" },
+      happy: { ja: 'ふわふわ嬉しい！', en: 'Fluffy and happy!' },
+      excited: { ja: 'もっちもちだよ！', en: 'So squishy!' },
+      focused: { ja: '深呼吸して、リラックス', en: 'Breathe deep, relax' },
+      proud: { ja: 'お疲れさま、よく頑張ったね', en: 'Great work this week!' },
+    },
+    kaze: {
+      sleeping: { ja: 'そよそよ... 💨', en: 'breezy... 💨' },
+      calm: { ja: '今日も駆け抜けよう！', en: "Let's run with the wind!" },
+      happy: { ja: 'ビューン！いい感じ！', en: 'Whoosh! Feeling great!' },
+      excited: { ja: '風に乗って最高速！', en: 'Full speed on the wind!' },
+      focused: { ja: '風を読んで集中', en: 'Reading the wind...' },
+      proud: { ja: '嵐を乗り越えた！', en: 'Conquered the storm!' },
+    },
+  };
+
+  return messages[companionId][state][language];
+}
+
+// ===================================
+// Mission System Functions
+// ===================================
+
+const MISSION_TEMPLATES = {
+  daily: [
+    { titleKey: 'mission_daily_checkin', descriptionKey: 'mission_daily_checkin_desc', xpReward: 20, targetCount: 1 },
+    { titleKey: 'mission_complete_goal', descriptionKey: 'mission_complete_goal_desc', xpReward: 15, targetCount: 1 },
+    { titleKey: 'mission_visit_dashboard', descriptionKey: 'mission_visit_dashboard_desc', xpReward: 5, targetCount: 1 },
+  ],
+  weekly: [
+    { titleKey: 'mission_weekly_checkin', descriptionKey: 'mission_weekly_checkin_desc', xpReward: 50, targetCount: 1 },
+    { titleKey: 'mission_complete_3_goals', descriptionKey: 'mission_complete_3_goals_desc', xpReward: 40, targetCount: 3 },
+    { titleKey: 'mission_perfect_week', descriptionKey: 'mission_perfect_week_desc', xpReward: 100, targetCount: 1 },
+  ],
+};
+
+function getTodayStart(): string {
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  return now.toISOString();
+}
+
+function getWeekStartForMissions(): string {
+  const now = new Date();
+  const day = now.getDay();
+  const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+  const monday = new Date(now.setDate(diff));
+  monday.setHours(0, 0, 0, 0);
+  return monday.toISOString();
+}
+
+function generateMissions(type: 'daily' | 'weekly'): Mission[] {
+  const templates = MISSION_TEMPLATES[type];
+  const now = new Date();
+  const expiresAt = type === 'daily'
+    ? new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString()
+    : new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+  // Pick 2-3 random missions for daily, all for weekly
+  const count = type === 'daily' ? Math.min(2, templates.length) : templates.length;
+  const shuffled = [...templates].sort(() => Math.random() - 0.5).slice(0, count);
+
+  return shuffled.map((template) => ({
+    id: crypto.randomUUID(),
+    type,
+    titleKey: template.titleKey,
+    descriptionKey: template.descriptionKey,
+    xpReward: template.xpReward,
+    targetCount: template.targetCount,
+    currentCount: 0,
+    status: 'active' as const,
+    createdAt: now.toISOString(),
+    expiresAt,
+  }));
+}
+
+export async function getMissions(): Promise<MissionProgress> {
+  const stored = await localforage.getItem<MissionProgress>(KEYS.MISSIONS);
+  const todayStart = getTodayStart();
+  const weekStart = getWeekStartForMissions();
+
+  if (!stored) {
+    const missions: MissionProgress = {
+      dailyMissions: generateMissions('daily'),
+      weeklyMissions: generateMissions('weekly'),
+      lastDailyReset: todayStart,
+      lastWeeklyReset: weekStart,
+    };
+    await saveMissions(missions);
+    return missions;
+  }
+
+  // Check if we need to reset daily missions
+  if (stored.lastDailyReset !== todayStart) {
+    stored.dailyMissions = generateMissions('daily');
+    stored.lastDailyReset = todayStart;
+  }
+
+  // Check if we need to reset weekly missions
+  if (stored.lastWeeklyReset !== weekStart) {
+    stored.weeklyMissions = generateMissions('weekly');
+    stored.lastWeeklyReset = weekStart;
+  }
+
+  await saveMissions(stored);
+  return stored;
+}
+
+export async function saveMissions(missions: MissionProgress): Promise<void> {
+  await localforage.setItem(KEYS.MISSIONS, missions);
+}
+
+export async function updateMissionProgress(
+  missionKey: string,
+  increment: number = 1
+): Promise<{ completed: Mission[]; xpEarned: number }> {
+  const missions = await getMissions();
+  const completed: Mission[] = [];
+  let xpEarned = 0;
+
+  const updateMission = (mission: Mission) => {
+    if (mission.titleKey === missionKey && mission.status === 'active') {
+      mission.currentCount = Math.min(mission.currentCount + increment, mission.targetCount);
+      if (mission.currentCount >= mission.targetCount) {
+        mission.status = 'completed';
+        completed.push(mission);
+        xpEarned += mission.xpReward;
+      }
+    }
+  };
+
+  missions.dailyMissions.forEach(updateMission);
+  missions.weeklyMissions.forEach(updateMission);
+
+  await saveMissions(missions);
+
+  // Add XP to companion if missions completed
+  if (xpEarned > 0) {
+    await addCompanionXP(xpEarned);
+  }
+
+  return { completed, xpEarned };
 }

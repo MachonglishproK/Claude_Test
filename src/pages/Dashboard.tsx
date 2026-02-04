@@ -13,10 +13,11 @@ import {
 } from 'recharts';
 import { PenSquare, Target, CheckCircle2 } from 'lucide-react';
 import { useSettings } from '../hooks/useSettings';
-import { getCheckIns, getGoals, getGoalProgress, getUserStats, toggleGoalProgress, updateGoalCompletionStats } from '../lib/storage';
+import { getCheckIns, getGoals, getGoalProgress, getUserStats, toggleGoalProgress, updateGoalCompletionStats, getCompanionData, getCompanionSettings, getMissions, updateMissionProgress, addCompanionXP } from '../lib/storage';
 import { getLastNWeeks, getWeekStart, formatDate } from '../lib/date';
 import { WeeklySummaryCard, BadgeDisplay, NewBadgeNotification } from '../components/gamification';
-import type { Goal, UserStats, Badge, CheckIn } from '../types';
+import { CompanionWidget, CompanionEmptyState, MissionList } from '../components/companion';
+import type { Goal, UserStats, Badge, CheckIn, CompanionData, CompanionSettings, MissionProgress } from '../types';
 
 interface ChartData {
   week: string;
@@ -35,6 +36,9 @@ export function Dashboard() {
   const [previousCheckIn, setPreviousCheckIn] = useState<CheckIn | null>(null);
   const [newBadges, setNewBadges] = useState<Badge[]>([]);
   const [goalsCompletedThisWeek, setGoalsCompletedThisWeek] = useState(0);
+  const [companionData, setCompanionData] = useState<CompanionData | null>(null);
+  const [companionSettings, setCompanionSettings] = useState<CompanionSettings | null>(null);
+  const [missions, setMissions] = useState<MissionProgress | null>(null);
   const [loading, setLoading] = useState(true);
 
   const currentWeek = getWeekStart();
@@ -44,12 +48,24 @@ export function Dashboard() {
   }, []);
 
   async function loadData() {
-    const [checkIns, goals, progress, stats] = await Promise.all([
+    const [checkIns, goals, progress, stats, compData, compSettings, missionData] = await Promise.all([
       getCheckIns(),
       getGoals(),
       getGoalProgress(),
       getUserStats(),
+      getCompanionData(),
+      getCompanionSettings(),
+      getMissions(),
     ]);
+
+    setCompanionData(compData);
+    setCompanionSettings(compSettings);
+    setMissions(missionData);
+
+    // Update mission progress for visiting dashboard
+    if (compSettings?.enabled) {
+      await updateMissionProgress('mission_visit_dashboard');
+    }
 
     const weeks = getLastNWeeks(8);
 
@@ -92,6 +108,14 @@ export function Dashboard() {
     if (badges.length > 0) {
       setNewBadges(badges);
     }
+
+    // Award XP to companion for completing a goal
+    if (companionSettings?.enabled && companionData) {
+      await addCompanionXP(10); // +10 XP for completing a goal
+      await updateMissionProgress('mission_complete_goal');
+      await updateMissionProgress('mission_complete_3_goals');
+    }
+
     await loadData();
   }
 
@@ -104,6 +128,8 @@ export function Dashboard() {
   }
 
   const gamificationEnabled = settings.gamificationEnabled;
+  const companionEnabled = companionSettings?.enabled ?? false;
+  const allGoalsDone = allGoals.length > 0 && incompleteGoals.length === 0;
 
   return (
     <div className="dashboard">
@@ -116,6 +142,46 @@ export function Dashboard() {
           language={settings.language}
           onDismiss={dismissBadgeNotification}
           title={t.gamification.badges.newBadge}
+        />
+      )}
+
+      {/* Companion Widget */}
+      {companionEnabled && companionData ? (
+        <CompanionWidget
+          companionData={companionData}
+          isInCheckIn={false}
+          allGoalsDone={allGoalsDone}
+          language={settings.language}
+          animationsEnabled={companionSettings?.animationsEnabled ?? true}
+          translations={{
+            level: t.companion.level,
+            xp: t.companion.xp,
+            chooseCompanion: t.companion.chooseCompanion,
+          }}
+        />
+      ) : companionEnabled ? (
+        <CompanionEmptyState
+          language={settings.language}
+          translations={{
+            noCompanion: t.companion.noCompanion,
+            chooseCompanion: t.companion.chooseCompanion,
+          }}
+        />
+      ) : null}
+
+      {/* Mission List */}
+      {companionEnabled && missions && (
+        <MissionList
+          missions={missions}
+          language={settings.language}
+          translations={{
+            dailyMissions: t.missions.dailyMissions,
+            weeklyMissions: t.missions.weeklyMissions,
+            completed: t.missions.completed,
+            xpReward: t.missions.xpReward,
+            missionTitles: t.missions.missionTitles,
+            missionDescriptions: t.missions.missionDescriptions,
+          }}
         />
       )}
 
