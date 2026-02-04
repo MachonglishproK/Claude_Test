@@ -96,3 +96,77 @@ export interface WeeklySummaryData {
   newBadges: Badge[];
   encouragement: 'great' | 'good' | 'keep_going' | 'start_fresh';
 }
+
+// ===================================
+// Companion System Types
+// ===================================
+
+export type CompanionId =
+  | 'ember'    // Warm, steady - Candle theme
+  | 'sprout'   // Patient, growth-focused - Plant theme
+  | 'nimbus'   // Dreamy, optimistic - Cloud theme
+  | 'pebble'   // Steady, reliable - Stone theme
+  | 'ripple'   // Adaptable, flowing - Water theme
+  | 'glim'     // Curious, playful - Light theme
+  | 'mochi'    // Soft, comforting - Soft theme
+  | 'kaze';    // Energetic, adventurous - Wind theme
+
+export type CompanionState =
+  | 'sleeping'  // Low activity / early morning
+  | 'calm'      // Default/idle state
+  | 'happy'     // User completed a goal
+  | 'excited'   // User achieved milestone
+  | 'focused'   // User is doing check-in
+  | 'proud';    // User completed all weekly goals
+
+export type CompanionEvolution = 1 | 2 | 3;
+
+export interface CompanionData {
+  id: CompanionId;
+  xp: number;
+  level: number;
+  evolution: CompanionEvolution;
+  selectedAt: string;
+  lastInteraction: string | null;
+}
+
+export interface CompanionInfo {
+  id: CompanionId;
+  name: { ja: string; en: string };
+  description: { ja: string; en: string };
+  personality: { ja: string; en: string };
+  supportStyle: { ja: string; en: string };
+  emoji: string;
+  evolutionEmojis: [string, string, string]; // Stage 1, 2, 3
+  color: string;
+}
+
+export interface CompanionSettings {
+  enabled: boolean;
+  animationsEnabled: boolean;
+  selectedCompanionId: CompanionId | null;
+}
+
+// Mission System Types
+export type MissionType = 'daily' | 'weekly';
+export type MissionStatus = 'active' | 'completed' | 'expired';
+
+export interface Mission {
+  id: string;
+  type: MissionType;
+  titleKey: string; // Translation key
+  descriptionKey: string;
+  xpReward: number;
+  targetCount: number;
+  currentCount: number;
+  status: MissionStatus;
+  createdAt: string;
+  expiresAt: string;
+}
+
+export interface MissionProgress {
+  dailyMissions: Mission[];
+  weeklyMissions: Mission[];
+  lastDailyReset: string;
+  lastWeeklyReset: string;
+}
