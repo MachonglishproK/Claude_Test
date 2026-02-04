@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Sparkles, Heart } from 'lucide-react';
+import { Sparkles, Heart, Egg } from 'lucide-react';
 import { useSettings } from '../hooks/useSettings';
 import { CompanionSelector } from '../components/companion';
-import { getCompanionData, getCompanionSettings, saveCompanionSettings } from '../lib/storage';
-import type { CompanionData, CompanionSettings } from '../types';
+import { getCompanionData, getCompanionSettings, saveCompanionSettings, getCollectionSettings, saveCollectionSettings } from '../lib/storage';
+import type { CompanionData, CompanionSettings, CollectionSettings } from '../types';
 
 export function SettingsPage() {
   const { settings, updateSettings, t } = useSettings();
@@ -14,18 +14,26 @@ export function SettingsPage() {
     animationsEnabled: true,
     selectedCompanionId: null,
   });
+  const [collectionSettings, setCollectionSettings] = useState<CollectionSettings>({
+    showCollection: true,
+    showEggProgress: true,
+    skipHatchingAnimation: false,
+    skipEvolutionAnimation: false,
+  });
 
   useEffect(() => {
     loadCompanionData();
   }, []);
 
   async function loadCompanionData() {
-    const [data, settings] = await Promise.all([
+    const [data, compSettings, collSettings] = await Promise.all([
       getCompanionData(),
       getCompanionSettings(),
+      getCollectionSettings(),
     ]);
     setCompanionData(data);
-    setCompanionSettings(settings);
+    setCompanionSettings(compSettings);
+    setCollectionSettings(collSettings);
   }
 
   async function handleThemeChange(theme: 'light' | 'dark') {
@@ -60,6 +68,16 @@ export function SettingsPage() {
   function handleCompanionSelect(data: CompanionData) {
     setCompanionData(data);
     setCompanionSettings(prev => ({ ...prev, selectedCompanionId: data.id }));
+    showMessage();
+  }
+
+  async function handleCollectionSettingChange<K extends keyof CollectionSettings>(
+    key: K,
+    value: CollectionSettings[K]
+  ) {
+    const newSettings = { ...collectionSettings, [key]: value };
+    setCollectionSettings(newSettings);
+    await saveCollectionSettings(newSettings);
     showMessage();
   }
 
@@ -159,6 +177,8 @@ export function SettingsPage() {
               currentCompanion={companionData}
               onSelect={handleCompanionSelect}
               language={settings.language}
+              showCollection={collectionSettings.showCollection}
+              skipHatchingAnimation={collectionSettings.skipHatchingAnimation}
               translations={{
                 title: t.companion.title,
                 selectButton: t.companion.selectButton,
@@ -166,7 +186,121 @@ export function SettingsPage() {
                 personality: t.companion.personality,
                 supportStyle: t.companion.supportStyle,
               }}
+              eggTranslations={collectionSettings.showCollection ? {
+                incubator: t.egg.incubator,
+                noEggs: t.egg.noEggs,
+                getNewEgg: t.egg.getNewEgg,
+                progress: t.egg.progress,
+                readyToHatch: t.egg.readyToHatch,
+                hatchButton: t.egg.hatchButton,
+                maxEggs: t.egg.maxEggs,
+                slotsUsed: t.egg.slotsUsed,
+                hatched: t.egg.hatched,
+                newCompanion: t.egg.newCompanion,
+                setAsCompanion: t.egg.setAsCompanion,
+                addToCollection: t.egg.addToCollection,
+                rare: t.egg.rare,
+                eggTypes: t.egg.eggTypes,
+                hints: t.egg.hints,
+              } : undefined}
+              collectionTranslations={collectionSettings.showCollection ? {
+                gallery: t.collection.gallery,
+                stats: t.collection.stats,
+                totalHatched: t.collection.totalHatched,
+                uniqueCompanions: t.collection.uniqueCompanions,
+                completion: t.collection.completion,
+                notYetFound: t.collection.notYetFound,
+                stageLabel: t.collection.stageLabel,
+                acquiredAt: t.collection.acquiredAt,
+                source: t.collection.source,
+                empty: t.collection.empty,
+                emptyHint: t.collection.emptyHint,
+              } : undefined}
             />
+          </>
+        )}
+      </div>
+
+      {/* Collection Settings */}
+      <div className="settings-section">
+        <div className="settings-header-with-icon">
+          <Egg size={18} />
+          <h3>{t.collectionSettings.showCollection}</h3>
+        </div>
+        <p className="settings-description">{t.collectionSettings.showCollectionDescription}</p>
+        <div className="gamification-options">
+          <button
+            className={`option-btn ${collectionSettings.showCollection ? 'selected' : ''}`}
+            onClick={() => handleCollectionSettingChange('showCollection', true)}
+          >
+            {t.settings.gamificationOn}
+          </button>
+          <button
+            className={`option-btn ${!collectionSettings.showCollection ? 'selected' : ''}`}
+            onClick={() => handleCollectionSettingChange('showCollection', false)}
+          >
+            {t.settings.gamificationOff}
+          </button>
+        </div>
+
+        {collectionSettings.showCollection && (
+          <>
+            <div className="companion-animation-setting">
+              <h4>{t.collectionSettings.showEggProgress}</h4>
+              <p className="settings-description">{t.collectionSettings.showEggProgressDescription}</p>
+              <div className="companion-toggle-options">
+                <button
+                  className={`option-btn ${collectionSettings.showEggProgress ? 'selected' : ''}`}
+                  onClick={() => handleCollectionSettingChange('showEggProgress', true)}
+                >
+                  {t.settings.gamificationOn}
+                </button>
+                <button
+                  className={`option-btn ${!collectionSettings.showEggProgress ? 'selected' : ''}`}
+                  onClick={() => handleCollectionSettingChange('showEggProgress', false)}
+                >
+                  {t.settings.gamificationOff}
+                </button>
+              </div>
+            </div>
+
+            <div className="companion-animation-setting">
+              <h4>{t.collectionSettings.skipHatchingAnimation}</h4>
+              <p className="settings-description">{t.collectionSettings.skipHatchingAnimationDescription}</p>
+              <div className="companion-toggle-options">
+                <button
+                  className={`option-btn ${collectionSettings.skipHatchingAnimation ? 'selected' : ''}`}
+                  onClick={() => handleCollectionSettingChange('skipHatchingAnimation', true)}
+                >
+                  {t.settings.gamificationOn}
+                </button>
+                <button
+                  className={`option-btn ${!collectionSettings.skipHatchingAnimation ? 'selected' : ''}`}
+                  onClick={() => handleCollectionSettingChange('skipHatchingAnimation', false)}
+                >
+                  {t.settings.gamificationOff}
+                </button>
+              </div>
+            </div>
+
+            <div className="companion-animation-setting">
+              <h4>{t.collectionSettings.skipEvolutionAnimation}</h4>
+              <p className="settings-description">{t.collectionSettings.skipEvolutionAnimationDescription}</p>
+              <div className="companion-toggle-options">
+                <button
+                  className={`option-btn ${collectionSettings.skipEvolutionAnimation ? 'selected' : ''}`}
+                  onClick={() => handleCollectionSettingChange('skipEvolutionAnimation', true)}
+                >
+                  {t.settings.gamificationOn}
+                </button>
+                <button
+                  className={`option-btn ${!collectionSettings.skipEvolutionAnimation ? 'selected' : ''}`}
+                  onClick={() => handleCollectionSettingChange('skipEvolutionAnimation', false)}
+                >
+                  {t.settings.gamificationOff}
+                </button>
+              </div>
+            </div>
           </>
         )}
       </div>

@@ -2116,3 +2116,881 @@ textarea.error {
     width: 100%;
   }
 }
+
+/* ===================================
+   Companion Tabs
+   =================================== */
+.companion-tabs {
+  display: flex;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: var(--spacing-sm);
+}
+
+.companion-tab {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: none;
+  border: none;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+
+.companion-tab:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-secondary);
+}
+
+.companion-tab.active {
+  color: var(--accent-color);
+  background-color: var(--bg-secondary);
+  border-bottom: 2px solid var(--accent-color);
+  margin-bottom: -1px;
+}
+
+/* ===================================
+   Incubator Styles
+   =================================== */
+.incubator {
+  padding: var(--spacing-md);
+}
+
+.incubator-loading {
+  display: flex;
+  justify-content: center;
+  padding: var(--spacing-xl);
+  color: var(--text-secondary);
+}
+
+.incubator-loading-icon {
+  animation: companion-bob 1.5s ease-in-out infinite;
+}
+
+.incubator-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+}
+
+.incubator-header h3 {
+  flex: 1;
+  margin: 0;
+  font-size: 1rem;
+}
+
+.incubator-icon {
+  color: var(--accent-color);
+}
+
+.incubator-slots {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  background-color: var(--bg-secondary);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+}
+
+.incubator-empty {
+  text-align: center;
+  padding: var(--spacing-xl);
+  background-color: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+}
+
+.incubator-empty p {
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-md);
+}
+
+.incubator-add-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--accent-color);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: background-color 0.2s;
+}
+
+.incubator-add-button:hover:not(:disabled) {
+  background-color: var(--accent-hover);
+}
+
+.incubator-add-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.incubator-eggs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.incubator-add-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 180px;
+  background-color: var(--bg-secondary);
+  border: 2px dashed var(--border-color);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+}
+
+.incubator-add-slot:hover:not(:disabled) {
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+}
+
+.incubator-add-slot:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.incubator-hints {
+  background-color: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+}
+
+.incubator-hints-title {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: var(--spacing-sm);
+}
+
+.incubator-hints-list {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.incubator-hints-list li {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  background-color: var(--bg-primary);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+}
+
+/* ===================================
+   Egg Card Styles
+   =================================== */
+.egg-card {
+  display: flex;
+  flex-direction: column;
+  padding: var(--spacing-md);
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  transition: all 0.2s;
+}
+
+.egg-card.ready {
+  border-color: var(--success-color);
+  background-color: rgba(76, 175, 80, 0.05);
+}
+
+.egg-card.hatching {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.egg-card-visual {
+  position: relative;
+  text-align: center;
+  padding: var(--spacing-md) 0;
+}
+
+.egg-emoji {
+  font-size: 2.5rem;
+  display: inline-block;
+}
+
+.egg-idle {
+  animation: egg-idle 2s ease-in-out infinite;
+}
+
+.egg-ready-wobble {
+  animation: egg-wobble 0.5s ease-in-out infinite;
+}
+
+.egg-sparkles {
+  position: absolute;
+  top: 0;
+  right: 25%;
+  color: var(--success-color);
+  animation: sparkle-float 1s ease-in-out infinite;
+}
+
+.egg-card-info {
+  margin-bottom: var(--spacing-sm);
+}
+
+.egg-card-type {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.egg-card-description {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin: var(--spacing-xs) 0 0 0;
+}
+
+.egg-card-progress {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.egg-progress-bar {
+  flex: 1;
+  height: 6px;
+  background-color: var(--bg-secondary);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.egg-progress-fill {
+  height: 100%;
+  background-color: var(--accent-color);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.egg-card.ready .egg-progress-fill {
+  background-color: var(--success-color);
+}
+
+.egg-progress-text {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  min-width: 36px;
+  text-align: right;
+}
+
+.egg-hatch-button {
+  width: 100%;
+  padding: var(--spacing-sm);
+  background-color: var(--success-color);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.egg-hatch-button:hover:not(:disabled) {
+  background-color: #3d8b40;
+}
+
+.egg-hatch-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.egg-not-ready {
+  text-align: center;
+}
+
+.egg-progress-hint {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+/* ===================================
+   Egg Summary (Dashboard)
+   =================================== */
+.egg-summary {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--bg-secondary);
+  border-radius: var(--radius-md);
+}
+
+.egg-summary-icons {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.egg-summary-icon {
+  font-size: 1.25rem;
+  transition: transform 0.2s;
+}
+
+.egg-summary-icon.ready {
+  animation: egg-wobble 0.5s ease-in-out infinite;
+}
+
+.egg-summary-info {
+  flex: 1;
+  text-align: right;
+}
+
+.egg-summary-ready {
+  font-size: 0.75rem;
+  color: var(--success-color);
+  font-weight: 500;
+}
+
+.egg-summary-progress {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+/* ===================================
+   Hatching Modal
+   =================================== */
+.hatching-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: var(--spacing-md);
+}
+
+.hatching-modal {
+  background-color: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  max-width: 360px;
+  width: 100%;
+  text-align: center;
+  position: relative;
+}
+
+.hatching-modal-close {
+  position: absolute;
+  top: var(--spacing-sm);
+  right: var(--spacing-sm);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  padding: var(--spacing-xs);
+}
+
+.hatching-modal-close:hover {
+  color: var(--text-primary);
+}
+
+.hatching-animation {
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--spacing-md);
+}
+
+.hatching-egg {
+  position: relative;
+}
+
+.hatching-egg-emoji {
+  font-size: 4rem;
+  display: inline-block;
+}
+
+.hatching-egg-emoji.wobble {
+  animation: egg-hatch-wobble 0.4s ease-in-out infinite;
+}
+
+.hatching-egg-emoji.crack {
+  animation: egg-crack 0.8s ease-out forwards;
+}
+
+.hatching-reveal {
+  position: relative;
+}
+
+.hatching-companion-emoji {
+  font-size: 4rem;
+  display: inline-block;
+  animation: reveal-pop 0.5s ease-out;
+}
+
+.hatching-rare-badge {
+  position: absolute;
+  top: -8px;
+  right: -24px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background-color: #ffd700;
+  color: #000;
+  font-size: 0.65rem;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  animation: badge-bounce 0.5s ease-out;
+}
+
+.hatching-title {
+  font-size: 1.25rem;
+  margin-bottom: var(--spacing-sm);
+  color: var(--text-primary);
+}
+
+.hatching-message {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-md);
+}
+
+.hatching-companion-info {
+  background-color: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  border-left: 3px solid var(--companion-color, var(--accent-color));
+}
+
+.hatching-companion-name {
+  font-size: 1.125rem;
+  color: var(--companion-color, var(--accent-color));
+  margin-bottom: var(--spacing-xs);
+}
+
+.hatching-companion-personality {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.hatching-companion-description {
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.hatching-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.hatching-action-primary,
+.hatching-action-secondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+
+.hatching-action-primary {
+  background-color: var(--accent-color);
+  color: white;
+}
+
+.hatching-action-primary:hover:not(:disabled) {
+  background-color: var(--accent-hover);
+}
+
+.hatching-action-secondary {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.hatching-action-secondary:hover:not(:disabled) {
+  background-color: var(--border-color);
+}
+
+.hatching-action-primary:disabled,
+.hatching-action-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ===================================
+   Collection Styles
+   =================================== */
+.collection {
+  padding: var(--spacing-md);
+}
+
+.collection-loading {
+  display: flex;
+  justify-content: center;
+  padding: var(--spacing-xl);
+  color: var(--text-secondary);
+}
+
+.collection-loading-icon {
+  animation: companion-bob 1.5s ease-in-out infinite;
+}
+
+.collection-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+}
+
+.collection-header h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.collection-icon {
+  color: var(--accent-color);
+}
+
+.collection-stats {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-md);
+  background-color: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  flex-wrap: wrap;
+}
+
+.collection-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xs);
+  flex: 1;
+  min-width: 60px;
+}
+
+.collection-stat svg {
+  color: var(--accent-color);
+}
+
+.collection-stat-value {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: var(--text-primary);
+}
+
+.collection-stat-label {
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.collection-empty {
+  text-align: center;
+  padding: var(--spacing-xl);
+  background-color: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+}
+
+.collection-empty-icon {
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-md);
+}
+
+.collection-empty p {
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.collection-empty-hint {
+  font-size: 0.875rem;
+  margin-top: var(--spacing-sm) !important;
+}
+
+.collection-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.collection-companion {
+  padding: var(--spacing-md);
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.collection-companion.collected:hover {
+  border-color: var(--companion-color, var(--accent-color));
+}
+
+.collection-companion.not-collected {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.collection-companion.selected {
+  border-color: var(--companion-color, var(--accent-color));
+  box-shadow: 0 0 0 2px var(--companion-color, var(--accent-color));
+}
+
+.collection-companion-header {
+  margin-bottom: var(--spacing-sm);
+}
+
+.collection-companion-name {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.collection-stages {
+  display: flex;
+  justify-content: center;
+  gap: var(--spacing-sm);
+}
+
+.collection-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.collection-stage-emoji {
+  font-size: 1.5rem;
+  opacity: 0.3;
+}
+
+.collection-stage.collected .collection-stage-emoji {
+  opacity: 1;
+}
+
+.collection-stage-number {
+  font-size: 0.6rem;
+  color: var(--text-secondary);
+}
+
+/* Collection Detail */
+.collection-detail {
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-md);
+  background-color: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--companion-color, var(--accent-color));
+  position: relative;
+}
+
+.collection-detail-close {
+  position: absolute;
+  top: var(--spacing-sm);
+  right: var(--spacing-sm);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.25rem;
+  color: var(--text-secondary);
+  line-height: 1;
+}
+
+.collection-detail-close:hover {
+  color: var(--text-primary);
+}
+
+.collection-detail-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+}
+
+.collection-detail-emoji {
+  font-size: 2rem;
+}
+
+.collection-detail-info h4 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--companion-color, var(--accent-color));
+}
+
+.collection-detail-info p {
+  margin: var(--spacing-xs) 0 0 0;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.collection-detail-description {
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-md);
+}
+
+.collection-detail-stages h5 {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin: 0 0 var(--spacing-sm) 0;
+}
+
+.collection-detail-stages-grid {
+  display: flex;
+  gap: var(--spacing-md);
+}
+
+.collection-detail-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm);
+  background-color: var(--bg-primary);
+  border-radius: var(--radius-md);
+  min-width: 70px;
+}
+
+.collection-detail-stage:not(.collected) {
+  opacity: 0.4;
+}
+
+.collection-detail-stage-emoji {
+  font-size: 1.5rem;
+}
+
+.collection-detail-stage-info {
+  text-align: center;
+}
+
+.collection-detail-stage-date {
+  display: block;
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+}
+
+.collection-detail-stage-source {
+  display: block;
+  font-size: 0.6rem;
+  color: var(--text-secondary);
+}
+
+/* ===================================
+   Egg Animations
+   =================================== */
+@keyframes egg-idle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+@keyframes egg-wobble {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-5deg); }
+  75% { transform: rotate(5deg); }
+}
+
+@keyframes egg-hatch-wobble {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  25% { transform: rotate(-8deg) scale(1.02); }
+  75% { transform: rotate(8deg) scale(1.02); }
+}
+
+@keyframes egg-crack {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1.2); opacity: 0; }
+}
+
+@keyframes reveal-pop {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes badge-bounce {
+  0% { transform: scale(0) rotate(-10deg); }
+  50% { transform: scale(1.2) rotate(5deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+@keyframes sparkle-float {
+  0%, 100% { transform: translateY(0); opacity: 1; }
+  50% { transform: translateY(-5px); opacity: 0.7; }
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .egg-idle,
+  .egg-ready-wobble,
+  .egg-summary-icon.ready,
+  .hatching-egg-emoji.wobble,
+  .hatching-egg-emoji.crack,
+  .hatching-companion-emoji,
+  .hatching-rare-badge,
+  .egg-sparkles,
+  .incubator-loading-icon,
+  .collection-loading-icon {
+    animation: none;
+  }
+}
+
+/* ===================================
+   Responsive Egg & Collection
+   =================================== */
+@media (max-width: 640px) {
+  .companion-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .companion-tab span {
+    display: none;
+  }
+
+  .incubator-eggs {
+    grid-template-columns: 1fr;
+  }
+
+  .collection-gallery {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .collection-stats {
+    justify-content: space-around;
+  }
+
+  .hatching-modal {
+    padding: var(--spacing-md);
+  }
+
+  .hatching-egg-emoji,
+  .hatching-companion-emoji {
+    font-size: 3rem;
+  }
+
+  .collection-detail-stages-grid {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}

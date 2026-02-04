@@ -170,3 +170,54 @@ export interface MissionProgress {
   lastDailyReset: string;
   lastWeeklyReset: string;
 }
+
+// ===================================
+// Egg & Collection System Types
+// ===================================
+
+export type EggType = 'gentle' | 'energetic' | 'curious';
+
+export interface Egg {
+  id: string;
+  type: EggType;
+  progress: number; // 0-100
+  createdAt: string;
+  lastProgressAt: string | null;
+}
+
+export interface EggTypeInfo {
+  type: EggType;
+  name: { ja: string; en: string };
+  description: { ja: string; en: string };
+  emoji: string;
+  crackEmoji: string;
+  possibleCompanions: CompanionId[]; // Weighted companions for this egg type
+}
+
+export interface CollectionEntry {
+  companionId: CompanionId;
+  stage: CompanionEvolution;
+  acquiredAt: string;
+  source: 'selected' | 'hatched';
+  eggType?: EggType;
+}
+
+export interface CollectionData {
+  entries: CollectionEntry[];
+  eggs: Egg[];
+  maxEggs: number; // 1-3
+  totalHatched: number;
+}
+
+export interface CollectionSettings {
+  showCollection: boolean;
+  showEggProgress: boolean;
+  skipHatchingAnimation: boolean;
+  skipEvolutionAnimation: boolean;
+}
+
+export interface HatchingResult {
+  companionId: CompanionId;
+  eggType: EggType;
+  isRare: boolean;
+}
