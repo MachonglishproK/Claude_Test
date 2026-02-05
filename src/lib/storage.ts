@@ -118,6 +118,7 @@ export async function getSettings(): Promise<Settings> {
     collectionEnabled: true,
     animationsEnabled: true,
     effectsSkipEnabled: false,
+    supportStyle: 'praise',
   };
   return settings ? { ...defaults, ...settings } : defaults;
 }

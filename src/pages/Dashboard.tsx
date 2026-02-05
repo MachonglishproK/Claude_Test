@@ -11,13 +11,16 @@ import {
   BarChart,
   Bar,
 } from 'recharts';
-import { PenSquare, Target, CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react';
 import { useSettings } from '../hooks/useSettings';
-import { getCheckIns, getGoals, getGoalProgress, getUserStats, toggleGoalProgress, updateGoalCompletionStats, getCompanionData, getCompanionSettings, getMissions, addCompanionXP, getCollectionSettings, addProgressToAllEggs, EGG_PROGRESS_VALUES } from '../lib/storage';
+import { getCheckIns, getGoals, getGoalProgress, getUserStats, toggleGoalProgress, updateGoalCompletionStats, getCompanionData, getCompanionSettings, getMissions, addCompanionXP, getCollectionSettings, addProgressToAllEggs, EGG_PROGRESS_VALUES, getEggAcquisitionState, trackDailyActivity } from '../lib/storage';
 import { getLastNWeeks, getWeekStart, formatDate } from '../lib/date';
 import { WeeklySummaryCard, BadgeDisplay, NewBadgeNotification } from '../components/gamification';
-import { CompanionWidget, CompanionEmptyState, MissionList, EggSummary } from '../components/companion';
+import { CompanionWidget, CompanionEmptyState, MissionList } from '../components/companion';
+import { NextActionCTA, EggProgressCompact } from '../components/cockpit';
+import { getWeeklySummaryMessage } from '../lib/companionCopy';
 import type { Goal, UserStats, Badge, CheckIn, CompanionData, CompanionSettings, MissionProgress, CollectionSettings } from '../types';
+import type { NextActionType } from '../components/cockpit';
 
 interface ChartData {
   week: string;
@@ -41,6 +44,9 @@ export function Dashboard() {
   const [collectionSettings, setCollectionSettings] = useState<CollectionSettings | null>(null);
   const [missions, setMissions] = useState<MissionProgress | null>(null);
   const [loading, setLoading] = useState(true);
+  const [chartsExpanded, setChartsExpanded] = useState(false);
+  const [nextActionDismissed, setNextActionDismissed] = useState(false);
+  const [daysAway, setDaysAway] = useState(0);
 
   const currentWeek = getWeekStart();
 
@@ -49,7 +55,7 @@ export function Dashboard() {
   }, []);
 
   async function loadData() {
-    const [checkIns, goals, progress, stats, compData, compSettings, collSettings, missionData] = await Promise.all([
+    const [checkIns, goals, progress, stats, compData, compSettings, collSettings, missionData, eggAcquisition] = await Promise.all([
       getCheckIns(),
       getGoals(),
       getGoalProgress(),
@@ -58,7 +64,20 @@ export function Dashboard() {
       getCompanionSettings(),
       getCollectionSettings(),
       getMissions(),
+      getEggAcquisitionState(),
     ]);
+
+    // Calculate days away for welcome back message
+    if (eggAcquisition.lastActiveDate) {
+      const lastActive = new Date(eggAcquisition.lastActiveDate);
+      const now = new Date();
+      const diffTime = now.getTime() - lastActive.getTime();
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      setDaysAway(diffDays);
+    }
+
+    // Track daily activity
+    await trackDailyActivity();
 
     setCompanionData(compData);
     setCompanionSettings(compSettings);
@@ -124,6 +143,14 @@ export function Dashboard() {
     setNewBadges([]);
   }
 
+  function getNextActionType(): NextActionType {
+    if (nextActionDismissed) return 'none';
+    if (!currentCheckIn) return 'checkin';
+    if (allGoals.length === 0) return 'goal';
+    if (missions && missions.activeMissions.some(m => m.status === 'active')) return 'mission';
+    return 'none';
+  }
+
   if (loading) {
     return <div className="loading">{t.common.loading}</div>;
   }
@@ -131,11 +158,11 @@ export function Dashboard() {
   const gamificationEnabled = settings.gamificationEnabled;
   const companionEnabled = companionSettings?.enabled ?? false;
   const allGoalsDone = allGoals.length > 0 && incompleteGoals.length === 0;
+  const nextActionType = getNextActionType();
+  const supportStyle = settings.supportStyle ?? 'praise';
 
   return (
-    <div className="dashboard">
-      <h2>{t.dashboard.title}</h2>
-
+    <div className="dashboard cockpit">
       {/* Badge Notification */}
       {gamificationEnabled && newBadges.length > 0 && (
         <NewBadgeNotification
@@ -146,7 +173,7 @@ export function Dashboard() {
         />
       )}
 
-      {/* Companion Widget */}
+      {/* Section 1: Companion Widget (Greeting) */}
       {companionEnabled && companionData ? (
         <CompanionWidget
           companionData={companionData}
@@ -154,6 +181,8 @@ export function Dashboard() {
           allGoalsDone={allGoalsDone}
           language={settings.language}
           animationsEnabled={companionSettings?.animationsEnabled ?? true}
+          supportStyle={supportStyle}
+          daysAway={daysAway}
           translations={{
             level: t.companion.level,
             xp: t.companion.xp,
@@ -170,30 +199,35 @@ export function Dashboard() {
         />
       ) : null}
 
-      {/* Mission List */}
+      {/* Section 2: Next Action CTA (single clear CTA) */}
+      {nextActionType !== 'none' && (
+        <NextActionCTA
+          actionType={nextActionType}
+          language={settings.language}
+          showDismiss={true}
+          onDismiss={() => setNextActionDismissed(true)}
+        />
+      )}
+
+      {/* Section 3: Today's Missions */}
       {companionEnabled && missions && (
-        <MissionList
-          missions={missions}
-          language={settings.language}
-          translations={t.missions as typeof t.missions & { [key: string]: string }}
-          onMissionComplete={() => loadData()}
-          onEggReceived={() => loadData()}
-        />
+        <div id="missions">
+          <MissionList
+            missions={missions}
+            language={settings.language}
+            translations={t.missions as typeof t.missions & { [key: string]: string }}
+            onMissionComplete={() => loadData()}
+            onEggReceived={() => loadData()}
+          />
+        </div>
       )}
 
-      {/* Egg Summary - Collection System */}
+      {/* Section 4: Egg Progress (compact) */}
       {collectionSettings?.showCollection && collectionSettings?.showEggProgress && (
-        <EggSummary
-          language={settings.language}
-          translations={{
-            incubator: t.egg.incubator,
-            noEggs: t.egg.noEggs,
-            readyToHatch: t.egg.readyToHatch,
-          }}
-        />
+        <EggProgressCompact language={settings.language} />
       )}
 
-      {/* Weekly Summary Card - Gamification */}
+      {/* Section 5: Weekly Summary Card */}
       {gamificationEnabled && userStats && (
         <WeeklySummaryCard
           goalsCompleted={goalsCompletedThisWeek}
@@ -202,6 +236,12 @@ export function Dashboard() {
           previousMood={previousCheckIn?.mood ?? null}
           streakDays={userStats.currentStreak}
           longestStreak={userStats.longestStreak}
+          language={settings.language}
+          companionMessage={
+            companionData
+              ? getWeeklySummaryMessage(companionData.id, supportStyle, settings.language)
+              : undefined
+          }
           translations={{
             title: t.gamification.weeklySummary.title,
             goalsProgress: t.gamification.weeklySummary.goalsProgress,
@@ -214,73 +254,14 @@ export function Dashboard() {
         />
       )}
 
-      {/* Quick Actions */}
-      <div className="quick-actions">
-        {!currentCheckIn && (
-          <Link to="/checkin" className="quick-action-btn">
-            <PenSquare size={16} />
-            {t.dashboard.quickCheckin}
-          </Link>
-        )}
-        {allGoals.length === 0 && (
-          <Link to="/goals" className="quick-action-btn secondary">
-            <Target size={16} />
-            {t.dashboard.emptyState.addGoal}
-          </Link>
-        )}
-      </div>
-
-      <div className="charts-grid">
-        <div className="chart-card">
-          <h3>{t.dashboard.weeklyMood}</h3>
-          <p className="chart-subtitle">{t.dashboard.last8Weeks}</p>
-          <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="week" fontSize={12} />
-              <YAxis domain={[1, 5]} ticks={[1, 2, 3, 4, 5]} />
-              <Tooltip />
-              <Line type="monotone" dataKey="mood" stroke="#8884d8" strokeWidth={2} connectNulls />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div className="chart-card">
-          <h3>{t.dashboard.weeklyExercise}</h3>
-          <p className="chart-subtitle">{t.dashboard.last8Weeks}</p>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="week" fontSize={12} />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="exercise" fill="#82ca9d" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div className="chart-card">
-          <h3>{t.dashboard.goalProgress}</h3>
-          <p className="chart-subtitle">{t.dashboard.last8Weeks}</p>
-          <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="week" fontSize={12} />
-              <YAxis domain={[0, 100]} unit="%" />
-              <Tooltip />
-              <Line type="monotone" dataKey="goalRate" stroke="#ffc658" strokeWidth={2} connectNulls />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      <div className="incomplete-goals">
+      {/* Section 6: Goals List (compact) */}
+      <div className="cockpit-goals">
         <h3>{t.dashboard.incompleteGoals}</h3>
         {incompleteGoals.length === 0 ? (
           <p className="no-data">{t.dashboard.noIncomplete}</p>
         ) : (
           <ul className="goal-list">
-            {incompleteGoals.map((goal) => (
+            {incompleteGoals.slice(0, 3).map((goal) => (
               <li key={goal.id} className="goal-item">
                 <button
                   className="goal-quick-check"
@@ -293,11 +274,76 @@ export function Dashboard() {
                 <span className="goal-category">{t.goals.categories[goal.category]}</span>
               </li>
             ))}
+            {incompleteGoals.length > 3 && (
+              <li className="goal-item more-goals">
+                <Link to="/goals">
+                  +{incompleteGoals.length - 3} {settings.language === 'ja' ? 'つ見る' : ' more'}
+                </Link>
+              </li>
+            )}
           </ul>
         )}
       </div>
 
-      {/* Badges Section - Gamification */}
+      {/* Section 7: Charts (collapsed by default) */}
+      <div className="cockpit-charts">
+        <button
+          className="cockpit-section-toggle"
+          onClick={() => setChartsExpanded(!chartsExpanded)}
+          aria-expanded={chartsExpanded}
+        >
+          <span>{settings.language === 'ja' ? '週次チャート' : 'Weekly Charts'}</span>
+          {chartsExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+        </button>
+
+        {chartsExpanded && (
+          <div className="charts-grid">
+            <div className="chart-card">
+              <h3>{t.dashboard.weeklyMood}</h3>
+              <p className="chart-subtitle">{t.dashboard.last8Weeks}</p>
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="week" fontSize={12} />
+                  <YAxis domain={[1, 5]} ticks={[1, 2, 3, 4, 5]} />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="mood" stroke="#8884d8" strokeWidth={2} connectNulls />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div className="chart-card">
+              <h3>{t.dashboard.weeklyExercise}</h3>
+              <p className="chart-subtitle">{t.dashboard.last8Weeks}</p>
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="week" fontSize={12} />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="exercise" fill="#82ca9d" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div className="chart-card">
+              <h3>{t.dashboard.goalProgress}</h3>
+              <p className="chart-subtitle">{t.dashboard.last8Weeks}</p>
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="week" fontSize={12} />
+                  <YAxis domain={[0, 100]} unit="%" />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="goalRate" stroke="#ffc658" strokeWidth={2} connectNulls />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Section 8: Badges */}
       {gamificationEnabled && userStats && userStats.badges.length > 0 && (
         <div className="dashboard-badges">
           <BadgeDisplay

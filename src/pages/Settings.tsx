@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Sparkles, Heart, Egg } from 'lucide-react';
+import { Sparkles, Heart, Egg, MessageCircle } from 'lucide-react';
 import { useSettings } from '../hooks/useSettings';
 import { CompanionSelector } from '../components/companion';
 import { getCompanionData, getCompanionSettings, saveCompanionSettings, getCollectionSettings, saveCollectionSettings } from '../lib/storage';
-import type { CompanionData, CompanionSettings, CollectionSettings } from '../types';
+import type { CompanionData, CompanionSettings, CollectionSettings, SupportStyle } from '../types';
 
 export function SettingsPage() {
   const { settings, updateSettings, t } = useSettings();
@@ -62,6 +62,11 @@ export function SettingsPage() {
     const newSettings = { ...companionSettings, animationsEnabled: enabled };
     setCompanionSettings(newSettings);
     await saveCompanionSettings(newSettings);
+    showMessage();
+  }
+
+  async function handleSupportStyleChange(style: SupportStyle) {
+    await updateSettings({ supportStyle: style });
     showMessage();
   }
 
@@ -170,6 +175,30 @@ export function SettingsPage() {
                 >
                   {t.settings.gamificationOff}
                 </button>
+              </div>
+            </div>
+
+            <div className="companion-support-style-setting">
+              <div className="settings-header-with-icon">
+                <MessageCircle size={16} />
+                <h4>{t.companion.supportStyleSetting}</h4>
+              </div>
+              <p className="settings-description">{t.companion.supportStyleDescription}</p>
+              <div className="support-style-options">
+                {(['praise', 'fact', 'empathy', 'minimal'] as SupportStyle[]).map((style) => (
+                  <button
+                    key={style}
+                    className={`support-style-btn ${settings.supportStyle === style ? 'selected' : ''}`}
+                    onClick={() => handleSupportStyleChange(style)}
+                  >
+                    <span className="support-style-name">
+                      {t.companion.supportStyles[style]}
+                    </span>
+                    <span className="support-style-desc">
+                      {t.companion.supportStyles[`${style}Desc` as keyof typeof t.companion.supportStyles]}
+                    </span>
+                  </button>
+                ))}
               </div>
             </div>
 

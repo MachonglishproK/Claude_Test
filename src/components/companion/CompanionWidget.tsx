@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { ChevronRight, TrendingUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { COMPANIONS, getCompanionState, getCompanionMessage } from '../../lib/storage';
-import type { CompanionData, CompanionState } from '../../types';
+import { getDashboardGreeting, getCompletionMessage } from '../../lib/companionCopy';
+import type { CompanionData, CompanionState, SupportStyle } from '../../types';
 
 interface CompanionWidgetProps {
   companionData: CompanionData;
@@ -10,6 +11,8 @@ interface CompanionWidgetProps {
   allGoalsDone?: boolean;
   language: 'ja' | 'en';
   animationsEnabled?: boolean;
+  supportStyle?: SupportStyle;
+  daysAway?: number;
   translations: {
     level: string;
     xp: string;
@@ -32,13 +35,21 @@ export function CompanionWidget({
   allGoalsDone = false,
   language,
   animationsEnabled = true,
+  supportStyle = 'praise',
+  daysAway = 0,
   translations,
 }: CompanionWidgetProps) {
   const [state, setState] = useState<CompanionState>('calm');
 
   const companion = COMPANIONS[companionData.id];
   const evolutionEmoji = companion.evolutionEmojis[companionData.evolution - 1];
-  const message = getCompanionMessage(state, companionData.id, language);
+
+  // Use new copy system for dashboard greetings, fall back to state messages for other contexts
+  const message = isInCheckIn
+    ? getCompanionMessage(state, companionData.id, language)
+    : allGoalsDone
+      ? getCompletionMessage(companionData.id, supportStyle, language)
+      : getDashboardGreeting(companionData.id, supportStyle, language, daysAway);
 
   useEffect(() => {
     const newState = getCompanionState(companionData, isInCheckIn, allGoalsDone);

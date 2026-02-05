@@ -20,6 +20,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     collectionEnabled: true,
     animationsEnabled: true,
     effectsSkipEnabled: false,
+    supportStyle: 'praise',
   });
   const [loading, setLoading] = useState(true);
 

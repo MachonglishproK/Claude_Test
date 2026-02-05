@@ -1479,6 +1479,64 @@ textarea.error {
   font-size: 0.875rem;
 }
 
+/* Weekly Summary 30-second Digest */
+.weekly-summary-digest {
+  padding: var(--spacing-sm) 0;
+  margin-bottom: var(--spacing-sm);
+}
+
+.weekly-summary-digest .digest-line {
+  margin: 0;
+  padding: var(--spacing-xs) 0;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.weekly-summary-digest .digest-line::before {
+  content: '• ';
+  color: var(--accent-color);
+}
+
+.weekly-summary-digest .digest-companion-reaction {
+  margin: var(--spacing-sm) 0 0 0;
+  padding: var(--spacing-sm);
+  background-color: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  font-style: italic;
+  color: var(--text-secondary);
+}
+
+.weekly-summary-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  width: 100%;
+  padding: var(--spacing-sm);
+  background: none;
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.weekly-summary-toggle:hover {
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+}
+
+.weekly-summary-toggle svg {
+  transition: transform 0.2s ease;
+}
+
+.weekly-summary-toggle svg.rotated {
+  transform: rotate(180deg);
+}
+
 /* Dashboard Quick Actions */
 .quick-actions {
   display: flex;
@@ -1551,6 +1609,349 @@ textarea.error {
 
   .quick-action-btn {
     justify-content: center;
+  }
+}
+
+/* ===================================
+   Cockpit Layout (Dashboard)
+   =================================== */
+
+.dashboard.cockpit {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+/* Next Action CTA */
+.next-action-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.next-action-cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: var(--spacing-md);
+  background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-hover) 100%);
+  color: white;
+  border: none;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.next-action-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.next-action-content {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.next-action-text {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.next-action-label {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.next-action-desc {
+  font-size: 0.75rem;
+  opacity: 0.9;
+}
+
+.next-action-arrow {
+  opacity: 0.8;
+}
+
+.next-action-dismiss {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.next-action-dismiss:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
+.next-action-done {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  background-color: var(--bg-card);
+  border: 1px solid var(--success-color);
+  border-radius: var(--radius-lg);
+  color: var(--success-color);
+  width: 100%;
+  justify-content: center;
+}
+
+/* Egg Progress Compact */
+.egg-progress-compact {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md);
+}
+
+.egg-progress-empty {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  color: var(--text-secondary);
+}
+
+.egg-progress-empty-text {
+  flex: 1;
+  font-size: 0.875rem;
+}
+
+.egg-progress-get-egg {
+  font-size: 0.75rem;
+  color: var(--accent-color);
+}
+
+.egg-progress-main {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.egg-progress-emoji {
+  font-size: 1.25rem;
+}
+
+.egg-progress-bar-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.egg-progress-bar {
+  flex: 1;
+  height: 8px;
+  background-color: var(--bg-secondary);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.egg-progress-fill {
+  height: 100%;
+  background-color: var(--accent-color);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.egg-progress-fill.ready {
+  background-color: var(--success-color);
+  animation: egg-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes egg-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.egg-progress-text {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  min-width: 36px;
+}
+
+.egg-hatch-link {
+  font-size: 0.75rem;
+  color: var(--success-color);
+  font-weight: 600;
+  text-decoration: none;
+  padding: 2px 8px;
+  background-color: rgba(76, 175, 80, 0.1);
+  border-radius: var(--radius-sm);
+}
+
+.egg-count-badge {
+  font-size: 0.625rem;
+  background-color: var(--bg-secondary);
+  color: var(--text-secondary);
+  padding: 2px 6px;
+  border-radius: 10px;
+}
+
+.egg-hint-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-sm);
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 0;
+}
+
+.egg-hint-toggle:hover {
+  color: var(--accent-color);
+}
+
+.egg-hint-content {
+  margin-top: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  background-color: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+}
+
+.egg-hint-content ul {
+  list-style: none;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.egg-hint-content li {
+  padding: 2px 0;
+}
+
+.egg-hint-content li::before {
+  content: '• ';
+  color: var(--accent-color);
+}
+
+/* Cockpit Goals Section */
+.cockpit-goals {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md);
+}
+
+.cockpit-goals h3 {
+  margin: 0 0 var(--spacing-sm) 0;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.cockpit-goals .goal-item.more-goals {
+  justify-content: center;
+  border-top: 1px dashed var(--border-color);
+  padding-top: var(--spacing-sm);
+  margin-top: var(--spacing-xs);
+}
+
+.cockpit-goals .goal-item.more-goals a {
+  color: var(--accent-color);
+  text-decoration: none;
+  font-size: 0.875rem;
+}
+
+/* Cockpit Charts Section */
+.cockpit-charts {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.cockpit-section-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: var(--spacing-md);
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.cockpit-section-toggle:hover {
+  background-color: var(--bg-secondary);
+}
+
+.cockpit-charts .charts-grid {
+  padding: var(--spacing-md);
+  padding-top: 0;
+}
+
+/* Cockpit Responsive */
+@media (min-width: 768px) {
+  .dashboard.cockpit {
+    gap: var(--spacing-lg);
+  }
+
+  .next-action-cta {
+    max-width: 400px;
+    margin: 0 auto;
+  }
+
+  .egg-progress-compact {
+    max-width: 400px;
+    margin: 0 auto;
+  }
+}
+
+@media (min-width: 1280px) {
+  .dashboard.cockpit {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-lg);
+  }
+
+  .dashboard.cockpit > .companion-widget,
+  .dashboard.cockpit > .next-action-wrapper,
+  .dashboard.cockpit > .dashboard-badges,
+  .dashboard.cockpit > .cockpit-charts {
+    grid-column: 1 / -1;
+  }
+
+  .dashboard.cockpit > .next-action-wrapper {
+    max-width: 500px;
+    justify-self: center;
+  }
+}
+
+/* Animation for completion feedback */
+.goal-quick-check.completing {
+  animation: check-complete 0.3s ease-out;
+}
+
+@keyframes check-complete {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .next-action-cta,
+  .egg-progress-fill,
+  .goal-quick-check,
+  .mission-card.completed,
+  .weekly-summary-toggle svg {
+    transition: none;
+    animation: none;
   }
 }
 
@@ -1938,6 +2339,71 @@ textarea.error {
   font-size: 0.875rem;
 }
 
+/* Support Style Selector */
+.companion-support-style-setting {
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--border-color);
+}
+
+.companion-support-style-setting .settings-header-with-icon {
+  margin-bottom: var(--spacing-xs);
+}
+
+.companion-support-style-setting h4 {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.support-style-options {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-sm);
+}
+
+.support-style-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--bg-input);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.support-style-btn:hover {
+  border-color: var(--color-primary);
+  background-color: var(--bg-card);
+}
+
+.support-style-btn.selected {
+  border-color: var(--color-primary);
+  background-color: color-mix(in srgb, var(--color-primary) 10%, var(--bg-card));
+}
+
+.support-style-name {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+}
+
+.support-style-desc {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  line-height: 1.3;
+}
+
+@media (max-width: 480px) {
+  .support-style-options {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ===================================
    Mission System Styles
    =================================== */
@@ -2013,6 +2479,13 @@ textarea.error {
 
 .mission-card.completed {
   background-color: rgba(76, 175, 80, 0.1);
+  animation: mission-complete-pulse 0.3s ease-out;
+}
+
+@keyframes mission-complete-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+  100% { transform: scale(1); }
 }
 
 .mission-card-content {
