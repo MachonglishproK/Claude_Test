@@ -56,7 +56,20 @@ export interface Settings {
   theme: 'light' | 'dark';
   language: 'ja' | 'en';
   gamificationEnabled: boolean;
+  // New settings for companion/collection system
+  companionEnabled: boolean;       // Show companion UI
+  collectionEnabled: boolean;      // Show collection (eggs/gallery)
+  animationsEnabled: boolean;      // Companion animations
+  effectsSkipEnabled: boolean;     // Skip hatching/evolution effects
 }
+
+// Growth Stage Names (たね→みならい→たつじん)
+export type GrowthStage = 'tane' | 'minarai' | 'tatsujin';
+export const GROWTH_STAGE_LEVELS = {
+  tane: { min: 1, max: 4 },       // Lv 1-4: たね
+  minarai: { min: 5, max: 9 },    // Lv 5-9: みならい
+  tatsujin: { min: 10, max: 30 }, // Lv 10+: たつじん
+} as const;
 
 // Gamification Types
 export interface UserStats {
@@ -102,14 +115,14 @@ export interface WeeklySummaryData {
 // ===================================
 
 export type CompanionId =
-  | 'ember'    // Warm, steady - Candle theme
-  | 'sprout'   // Patient, growth-focused - Plant theme
-  | 'nimbus'   // Dreamy, optimistic - Cloud theme
-  | 'pebble'   // Steady, reliable - Stone theme
-  | 'ripple'   // Adaptable, flowing - Water theme
-  | 'glim'     // Curious, playful - Light theme
-  | 'mochi'    // Soft, comforting - Soft theme
-  | 'kaze';    // Energetic, adventurous - Wind theme
+  | 'kotsuri'  // コツリ - Steady, consistent (コツコツ型)
+  | 'torai'    // トライ - Challenge-oriented (挑戦型)
+  | 'nonbi'    // ノンビ - Relaxed, gentle (のんびり型)
+  | 'kiri'     // キリッ - Focused, clear (集中型)
+  | 'haruka'   // ハルカ - Mood-aware, empathetic (気分屋・気持ち重視型)
+  | 'mitemi'   // ミテミ - Visualization-focused (見える化型)
+  | 'nikoru'   // ニコル - Social, cheerful (社交型)
+  | 'shibu';   // シブ - Cool, minimal (クール型)
 
 export type CompanionState =
   | 'sleeping'  // Low activity / early morning
@@ -148,27 +161,64 @@ export interface CompanionSettings {
 }
 
 // Mission System Types
-export type MissionType = 'daily' | 'weekly';
-export type MissionStatus = 'active' | 'completed' | 'expired';
+export type MissionType = 'quick' | 'medium' | 'weekly';  // 30秒〜1分 / 2〜5分 / 週次
+export type MissionCategory = 'quick' | 'medium' | 'weekly';
+export type MissionDifficulty = 1 | 2 | 3;  // Easy / Medium / Hard
+export type MissionStatus = 'active' | 'completed' | 'skipped';
 
 export interface Mission {
   id: string;
+  missionDefId: string;  // Reference to mission definition
   type: MissionType;
-  titleKey: string; // Translation key
-  descriptionKey: string;
-  xpReward: number;
-  targetCount: number;
-  currentCount: number;
   status: MissionStatus;
+  completedAt?: string;
   createdAt: string;
   expiresAt: string;
 }
 
+export interface MissionDefinition {
+  id: string;
+  titleKey: string;       // Translation key
+  descriptionKey: string;
+  type: MissionType;
+  category: MissionCategory;
+  difficulty: MissionDifficulty;
+  durationMinutes: number;  // Estimated duration
+  xpReward: number;
+  eggProgressReward: number;
+  optionalHintKey?: string;
+}
+
 export interface MissionProgress {
-  dailyMissions: Mission[];
-  weeklyMissions: Mission[];
+  activeMissions: Mission[];     // Currently active missions (2-3 at a time)
+  completedToday: string[];      // Mission IDs completed today
+  completedThisWeek: string[];   // Mission IDs completed this week
   lastDailyReset: string;
   lastWeeklyReset: string;
+  weeklyMissionsCompleted: number;  // Count for egg reward tracking
+}
+
+// Egg Acquisition Tracking
+export type EggAcquisitionSource =
+  | 'weekly_review'    // Weekly review completion
+  | 'missions_3'       // 3 missions completed this week
+  | 'return_bonus'     // Return after 7+ days
+  | 'streak_7'         // 7-week streak (optional extension)
+  | 'streak_14'        // 14-week streak (optional extension)
+  | 'streak_30';       // 30-week streak (optional extension)
+
+export interface EggAcquisitionRecord {
+  source: EggAcquisitionSource;
+  weekStart: string;
+  acquiredAt: string;
+  eggId?: string;  // If egg was actually received
+}
+
+export interface EggAcquisitionState {
+  weeklyReviewEggThisWeek: boolean;
+  missionsEggThisWeek: boolean;
+  lastActiveDate: string | null;  // For return bonus tracking
+  acquisitionHistory: EggAcquisitionRecord[];
 }
 
 // ===================================

@@ -12,7 +12,15 @@ interface SettingsContextType {
 const SettingsContext = createContext<SettingsContextType | null>(null);
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
-  const [settings, setSettings] = useState<Settings>({ theme: 'light', language: 'ja', gamificationEnabled: true });
+  const [settings, setSettings] = useState<Settings>({
+    theme: 'light',
+    language: 'ja',
+    gamificationEnabled: true,
+    companionEnabled: true,
+    collectionEnabled: true,
+    animationsEnabled: true,
+    effectsSkipEnabled: false,
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
