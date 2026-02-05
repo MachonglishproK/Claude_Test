@@ -2077,6 +2077,146 @@ textarea.error {
   flex-shrink: 0;
 }
 
+/* New Mission Card Styles */
+.mission-card-description {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-xs);
+  line-height: 1.4;
+}
+
+.mission-card-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.65rem;
+  color: white;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
+.mission-card-rewards {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.mission-card-xp {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+  color: var(--accent-color);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.mission-card-egg-progress {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.mission-card-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.mission-card-complete-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: white;
+  background-color: var(--accent-color);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background-color 0.2s, opacity 0.2s;
+}
+
+.mission-card-complete-btn:hover:not(:disabled) {
+  background-color: var(--accent-hover);
+}
+
+.mission-card-complete-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.mission-card-swap-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background-color: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.mission-card-swap-btn:hover:not(:disabled) {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.mission-card-swap-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.mission-card-swap-btn .spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.mission-card.swapping {
+  opacity: 0.7;
+}
+
+.mission-card-completed-state {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  color: var(--success-color);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.mission-card-undo-btn {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+  margin-left: var(--spacing-xs);
+}
+
+.mission-card-undo-btn:hover {
+  color: var(--text-primary);
+}
+
 /* Responsive Companion & Mission */
 @media (min-width: 641px) {
   .companion-grid {
