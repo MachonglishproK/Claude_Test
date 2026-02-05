@@ -1,5 +1,6 @@
 import localforage from 'localforage';
-import type { Goal, CheckIn, GoalProgress, WizardDraft, Settings, UserStats, Badge, BadgeType, CompanionData, CompanionSettings, CompanionId, CompanionInfo, MissionProgress, Mission, Egg, EggType, EggTypeInfo, CollectionData, CollectionEntry, CollectionSettings, HatchingResult } from '../types';
+import type { Goal, CheckIn, GoalProgress, WizardDraft, Settings, UserStats, Badge, BadgeType, CompanionData, CompanionSettings, CompanionId, CompanionInfo, MissionProgress, Mission, MissionDefinition, Egg, EggType, EggTypeInfo, CollectionData, CollectionEntry, CollectionSettings, HatchingResult, EggAcquisitionState, GrowthStage } from '../types';
+import { GROWTH_STAGE_LEVELS } from '../types';
 
 localforage.config({
   driver: localforage.INDEXEDDB,
@@ -19,6 +20,7 @@ const KEYS = {
   MISSIONS: 'missions',
   COLLECTION_DATA: 'collection_data',
   COLLECTION_SETTINGS: 'collection_settings',
+  EGG_ACQUISITION: 'egg_acquisition',
 } as const;
 
 export async function getGoals(): Promise<Goal[]> {
@@ -108,7 +110,16 @@ export async function clearWizardDraft(): Promise<void> {
 
 export async function getSettings(): Promise<Settings> {
   const settings = await localforage.getItem<Settings>(KEYS.SETTINGS);
-  return settings || { theme: 'light', language: 'ja', gamificationEnabled: true };
+  const defaults: Settings = {
+    theme: 'light',
+    language: 'ja',
+    gamificationEnabled: true,
+    companionEnabled: true,
+    collectionEnabled: true,
+    animationsEnabled: true,
+    effectsSkipEnabled: false,
+  };
+  return settings ? { ...defaults, ...settings } : defaults;
 }
 
 export async function saveSettings(settings: Settings): Promise<void> {
@@ -329,88 +340,91 @@ export function getBadgeInfo(type: BadgeType): { icon: string; name: { ja: strin
 
 // ===================================
 // Companion System Functions
+// 8 Original Companions (完全オリジナル)
+// Growth Stages: たね(Lv1-4) → みならい(Lv5-9) → たつじん(Lv10+)
+// Important: どの相棒も「罰しない」「強制しない」
 // ===================================
 
 export const COMPANIONS: Record<CompanionId, CompanionInfo> = {
-  ember: {
-    id: 'ember',
-    name: { ja: 'エンバー', en: 'Ember' },
-    description: { ja: '温かく安定した光で照らす', en: 'Illuminates with warm, steady light' },
+  kotsuri: {
+    id: 'kotsuri',
+    name: { ja: 'コツリ', en: 'Kotsuri' },
+    description: { ja: '穏やかで短文、継続をそっと見守る', en: 'Gentle and brief, quietly watches over your progress' },
     personality: { ja: 'コツコツ型', en: 'Steady & Consistent' },
-    supportStyle: { ja: '毎日少しずつ、一緒に進もう', en: "Let's take it one step at a time" },
-    emoji: '🕯️',
-    evolutionEmojis: ['🕯️', '🏮', '🗼'],
-    color: '#ff9f43',
+    supportStyle: { ja: 'いっしょに、ひとつだけ', en: 'Together, just one thing' },
+    emoji: '🐢',
+    evolutionEmojis: ['🐢', '🐚', '🪷'],
+    color: '#78c4a4',
   },
-  sprout: {
-    id: 'sprout',
-    name: { ja: 'スプラウト', en: 'Sprout' },
-    description: { ja: '成長を見守る優しい存在', en: 'Nurturing your growth gently' },
-    personality: { ja: 'じっくり型', en: 'Patient & Nurturing' },
-    supportStyle: { ja: '焦らなくていいよ、芽は必ず出る', en: 'No rush, growth takes time' },
-    emoji: '🌱',
-    evolutionEmojis: ['🌱', '🌿', '🌳'],
-    color: '#26de81',
+  torai: {
+    id: 'torai',
+    name: { ja: 'トライ', en: 'Torai' },
+    description: { ja: '軽快で小さな挑戦を提案', en: 'Light-hearted, suggests small challenges' },
+    personality: { ja: '挑戦型', en: 'Challenge-oriented' },
+    supportStyle: { ja: '今日はこれ、いけそう？', en: 'Think you can try this today?' },
+    emoji: '🌟',
+    evolutionEmojis: ['🌟', '⚡', '🔥'],
+    color: '#ff7f50',
   },
-  nimbus: {
-    id: 'nimbus',
-    name: { ja: 'ニンバス', en: 'Nimbus' },
-    description: { ja: '夢を見る雲のような楽観家', en: 'A dreamy cloud with silver linings' },
-    personality: { ja: 'ポジティブ型', en: 'Dreamy & Optimistic' },
-    supportStyle: { ja: 'きっと大丈夫、空は晴れる', en: "The sky will clear, don't worry" },
-    emoji: '☁️',
-    evolutionEmojis: ['☁️', '⛅', '🌈'],
-    color: '#a29bfe',
+  nonbi: {
+    id: 'nonbi',
+    name: { ja: 'ノンビ', en: 'Nonbi' },
+    description: { ja: 'ゆるやかで復帰を温かく歓迎', en: 'Relaxed, warmly welcomes you back' },
+    personality: { ja: 'のんびり型', en: 'Easygoing' },
+    supportStyle: { ja: 'むりしないでOK', en: 'No pressure, it\'s okay' },
+    emoji: '🦥',
+    evolutionEmojis: ['🦥', '🌸', '🌈'],
+    color: '#b8d4e3',
   },
-  pebble: {
-    id: 'pebble',
-    name: { ja: 'ペブル', en: 'Pebble' },
-    description: { ja: '揺るがない頼れる存在', en: 'Solid and dependable as stone' },
-    personality: { ja: '堅実型', en: 'Steady & Reliable' },
-    supportStyle: { ja: '一歩一歩、確実に進もう', en: 'One solid step at a time' },
-    emoji: '🪨',
-    evolutionEmojis: ['🪨', '⛰️', '🏔️'],
-    color: '#636e72',
+  kiri: {
+    id: 'kiri',
+    name: { ja: 'キリッ', en: 'Kiri' },
+    description: { ja: '簡潔で次の一手を明確に', en: 'Concise, clarifies your next step' },
+    personality: { ja: '集中型', en: 'Focused' },
+    supportStyle: { ja: '次はこれ', en: 'Next is this' },
+    emoji: '🎯',
+    evolutionEmojis: ['🎯', '🔷', '💎'],
+    color: '#5b9bd5',
   },
-  ripple: {
-    id: 'ripple',
-    name: { ja: 'リップル', en: 'Ripple' },
-    description: { ja: '柔軟に流れる適応力', en: 'Flows and adapts like water' },
-    personality: { ja: '柔軟型', en: 'Adaptable & Flowing' },
-    supportStyle: { ja: '流れに乗って、自然体でいこう', en: 'Go with the flow, be natural' },
-    emoji: '💧',
-    evolutionEmojis: ['💧', '🌊', '🌏'],
-    color: '#0984e3',
+  haruka: {
+    id: 'haruka',
+    name: { ja: 'ハルカ', en: 'Haruka' },
+    description: { ja: '共感力が高く気持ちに寄り添う', en: 'Empathetic, stays close to your feelings' },
+    personality: { ja: '気持ち重視型', en: 'Mood-aware' },
+    supportStyle: { ja: 'その気持ち、わかる', en: 'I understand that feeling' },
+    emoji: '🌙',
+    evolutionEmojis: ['🌙', '☁️', '🌊'],
+    color: '#9b8ec4',
   },
-  glim: {
-    id: 'glim',
-    name: { ja: 'グリム', en: 'Glim' },
-    description: { ja: '好奇心いっぱいの小さな光', en: 'A curious little spark of light' },
-    personality: { ja: '探求型', en: 'Curious & Playful' },
-    supportStyle: { ja: '新しい発見、一緒にしよう！', en: "Let's discover something new!" },
-    emoji: '✨',
-    evolutionEmojis: ['✨', '🪲', '⭐'],
-    color: '#fdcb6e',
+  mitemi: {
+    id: 'mitemi',
+    name: { ja: 'ミテミ', en: 'Mitemi' },
+    description: { ja: '事実ベースで進捗を可視化', en: 'Fact-based, visualizes your progress' },
+    personality: { ja: '見える化型', en: 'Visualization-focused' },
+    supportStyle: { ja: '今週はここまで', en: 'This week so far' },
+    emoji: '📊',
+    evolutionEmojis: ['📊', '🗺️', '🌐'],
+    color: '#6c9b7d',
   },
-  mochi: {
-    id: 'mochi',
-    name: { ja: 'モチ', en: 'Mochi' },
-    description: { ja: 'ふわふわ癒し系のお餅', en: 'Soft and squishy comfort' },
-    personality: { ja: '癒し型', en: 'Soft & Comforting' },
-    supportStyle: { ja: '無理しないでね、休むのも大事', en: "Don't push too hard, rest is okay" },
-    emoji: '🍡',
-    evolutionEmojis: ['🍡', '🧁', '☁️'],
-    color: '#fd79a8',
+  nikoru: {
+    id: 'nikoru',
+    name: { ja: 'ニコル', en: 'Nikoru' },
+    description: { ja: '明るく称賛が得意', en: 'Bright, great at praising' },
+    personality: { ja: '社交型', en: 'Social' },
+    supportStyle: { ja: 'いいね！それ最高', en: 'Nice! That\'s awesome' },
+    emoji: '🎉',
+    evolutionEmojis: ['🎉', '✨', '👑'],
+    color: '#ffd93d',
   },
-  kaze: {
-    id: 'kaze',
-    name: { ja: 'カゼ', en: 'Kaze' },
-    description: { ja: 'エネルギッシュな風の精霊', en: 'An energetic wind spirit' },
-    personality: { ja: '行動型', en: 'Energetic & Action-oriented' },
-    supportStyle: { ja: 'さあ、今日も駆け抜けよう！', en: "Let's go, full speed ahead!" },
-    emoji: '💨',
-    evolutionEmojis: ['💨', '🌀', '🌪️'],
-    color: '#00cec9',
+  shibu: {
+    id: 'shibu',
+    name: { ja: 'シブ', en: 'Shibu' },
+    description: { ja: '控えめで静かな達成感を演出', en: 'Reserved, creates quiet sense of achievement' },
+    personality: { ja: 'クール型', en: 'Cool & Minimal' },
+    supportStyle: { ja: '悪くない', en: 'Not bad' },
+    emoji: '🗻',
+    evolutionEmojis: ['🗻', '🌑', '⬛'],
+    color: '#5c5c5c',
   },
 };
 
@@ -460,11 +474,14 @@ export async function selectCompanion(companionId: CompanionId): Promise<Compani
   return newData;
 }
 
+// XP calculation: 100 XP per level, max level 30
+// Growth stages: たね(Lv1-4) → みならい(Lv5-9) → たつじん(Lv10+)
 function calculateLevelFromXP(xp: number): { level: number; evolution: 1 | 2 | 3 } {
   const level = Math.min(30, Math.floor(xp / 100) + 1);
   let evolution: 1 | 2 | 3 = 1;
-  if (level >= 20) evolution = 3;
-  else if (level >= 10) evolution = 2;
+  // New thresholds: Lv10+ = たつじん(3), Lv5-9 = みならい(2), Lv1-4 = たね(1)
+  if (level >= GROWTH_STAGE_LEVELS.tatsujin.min) evolution = 3;
+  else if (level >= GROWTH_STAGE_LEVELS.minarai.min) evolution = 2;
   return { level, evolution };
 }
 
@@ -520,92 +537,137 @@ export function getCompanionMessage(
   companionId: CompanionId,
   language: 'ja' | 'en'
 ): string {
+  // Messages for each companion - never pressuring, always supportive
   const messages: Record<CompanionId, Record<string, { ja: string; en: string }>> = {
-    ember: {
-      sleeping: { ja: 'zzz... 💤', en: 'zzz... 💤' },
-      calm: { ja: '今日も一緒にがんばろう', en: "Let's do our best today" },
-      happy: { ja: 'やったね！いい調子！', en: 'Great job! Keep it up!' },
-      excited: { ja: 'すごい！ピカピカだね！', en: 'Amazing! You shine bright!' },
-      focused: { ja: 'じっくり振り返ろう', en: "Let's reflect carefully" },
-      proud: { ja: '今週も最高だったね！', en: 'This week was awesome!' },
+    kotsuri: {
+      sleeping: { ja: 'すやすや... 🐢', en: 'zzz... 🐢' },
+      calm: { ja: 'いっしょに、ひとつだけ', en: 'Together, just one thing' },
+      happy: { ja: 'できたね。えらい', en: 'You did it. Well done' },
+      excited: { ja: 'つづいてる！すごいよ', en: 'You\'re keeping at it!' },
+      focused: { ja: 'ゆっくり振り返ろう', en: 'Let\'s reflect slowly' },
+      proud: { ja: 'また来週も、いっしょに', en: 'See you next week too' },
     },
-    sprout: {
-      sleeping: { ja: 'すやすや... 🌙', en: 'sleeping... 🌙' },
-      calm: { ja: '今日も少しずつ成長しよう', en: "Let's grow a little today" },
-      happy: { ja: '芽が伸びてきたよ！', en: 'The sprout is growing!' },
-      excited: { ja: 'ぐんぐん成長中！', en: 'Growing so fast!' },
-      focused: { ja: '根を張る時間だね', en: 'Time to put down roots' },
-      proud: { ja: '立派に育ったね！', en: "You've grown so well!" },
+    torai: {
+      sleeping: { ja: '...zzz ⚡', en: '...zzz ⚡' },
+      calm: { ja: '今日はこれ、いけそう？', en: 'Think you can try this?' },
+      happy: { ja: 'やるじゃん！', en: 'Nice one!' },
+      excited: { ja: 'いい感じ！次いってみよう', en: 'Looking good! What\'s next?' },
+      focused: { ja: 'チャレンジ中...！', en: 'Challenge in progress...!' },
+      proud: { ja: '今週よくがんばった！', en: 'Great effort this week!' },
     },
-    nimbus: {
-      sleeping: { ja: 'ふわふわ... ☁️', en: 'floating... ☁️' },
-      calm: { ja: '今日はいい天気になりそう', en: 'Looks like a nice day' },
-      happy: { ja: '虹が見えそう！', en: 'I see a rainbow coming!' },
-      excited: { ja: 'わーい！晴れ晴れ！', en: 'Yay! Clear skies!' },
-      focused: { ja: '空を見上げて深呼吸', en: 'Look up and breathe deep' },
-      proud: { ja: '今週は最高の青空！', en: 'Blue skies all week!' },
+    nonbi: {
+      sleeping: { ja: 'のんびり... 🦥', en: 'relaxing... 🦥' },
+      calm: { ja: 'むりしないでOK', en: 'No pressure, it\'s okay' },
+      happy: { ja: 'いいペースだね', en: 'Nice pace' },
+      excited: { ja: 'おかえり！待ってたよ', en: 'Welcome back! Missed you' },
+      focused: { ja: '自分のペースでいいよ', en: 'Go at your own pace' },
+      proud: { ja: 'ゆっくりできた？', en: 'Did you take it easy?' },
     },
-    pebble: {
-      sleeping: { ja: 'ごろん... 🪨', en: 'resting... 🪨' },
-      calm: { ja: '今日も一歩ずつ', en: 'One step at a time today' },
-      happy: { ja: '着実に進んでいるね', en: "You're making progress" },
-      excited: { ja: '山が動いた！', en: 'Mountains are moving!' },
-      focused: { ja: '土台を固めよう', en: "Let's build a solid base" },
-      proud: { ja: '揺るがない一週間だった！', en: 'A rock-solid week!' },
+    kiri: {
+      sleeping: { ja: '... 🎯', en: '... 🎯' },
+      calm: { ja: '次はこれ', en: 'Next is this' },
+      happy: { ja: '完了', en: 'Done' },
+      excited: { ja: '効率よく進んでいる', en: 'Moving efficiently' },
+      focused: { ja: '集中', en: 'Focus' },
+      proud: { ja: '整理できた週だった', en: 'A well-organized week' },
     },
-    ripple: {
-      sleeping: { ja: 'さらさら... 💤', en: 'flowing... 💤' },
-      calm: { ja: '流れに身を任せて', en: 'Go with the flow' },
-      happy: { ja: '波紋が広がっていく！', en: 'Ripples are spreading!' },
-      excited: { ja: '大きな波が来た！', en: 'A big wave is coming!' },
-      focused: { ja: '静かな水面で考えよう', en: 'Reflect on calm waters' },
-      proud: { ja: '素敵な流れだったね！', en: 'What a beautiful flow!' },
+    haruka: {
+      sleeping: { ja: 'おやすみ... 🌙', en: 'good night... 🌙' },
+      calm: { ja: 'その気持ち、わかる', en: 'I understand that feeling' },
+      happy: { ja: 'うれしそう！', en: 'You look happy!' },
+      excited: { ja: '調子よさそうだね', en: 'Seems like a good day' },
+      focused: { ja: '今の気持ちを大事に', en: 'Cherish how you feel now' },
+      proud: { ja: 'いろんな気持ちがあったね', en: 'Many feelings this week' },
     },
-    glim: {
-      sleeping: { ja: 'ちかちか... ✨', en: 'flickering... ✨' },
-      calm: { ja: '今日は何を発見しよう？', en: 'What will we discover?' },
-      happy: { ja: 'キラキラ！見つけた！', en: 'Sparkle! Found it!' },
-      excited: { ja: 'ピカーン！すごい発見！', en: 'Wow! Amazing discovery!' },
-      focused: { ja: 'じっくり観察中...', en: 'Observing carefully...' },
-      proud: { ja: '今週もたくさん発見したね！', en: 'So many discoveries!' },
+    mitemi: {
+      sleeping: { ja: '📊 ...', en: '📊 ...' },
+      calm: { ja: '今週はここまで', en: 'This week so far' },
+      happy: { ja: '進捗あり！', en: 'Progress made!' },
+      excited: { ja: 'データが伸びてる', en: 'Numbers are up' },
+      focused: { ja: '記録中...', en: 'Recording...' },
+      proud: { ja: '可視化できたね', en: 'Nicely visualized' },
     },
-    mochi: {
-      sleeping: { ja: 'もちもち... 💤', en: 'squishy... 💤' },
-      calm: { ja: 'のんびりいこうね', en: "Let's take it easy" },
-      happy: { ja: 'ふわふわ嬉しい！', en: 'Fluffy and happy!' },
-      excited: { ja: 'もっちもちだよ！', en: 'So squishy!' },
-      focused: { ja: '深呼吸して、リラックス', en: 'Breathe deep, relax' },
-      proud: { ja: 'お疲れさま、よく頑張ったね', en: 'Great work this week!' },
+    nikoru: {
+      sleeping: { ja: 'ふふっ... 💤', en: 'hehe... 💤' },
+      calm: { ja: 'いいね！それ最高', en: 'Nice! That\'s awesome' },
+      happy: { ja: 'すごーい！！', en: 'Amazing!!' },
+      excited: { ja: '最高！パーティーだ！', en: 'Awesome! Let\'s celebrate!' },
+      focused: { ja: '応援してるよ！', en: 'Cheering for you!' },
+      proud: { ja: '今週もすばらしい！', en: 'Wonderful week!' },
     },
-    kaze: {
-      sleeping: { ja: 'そよそよ... 💨', en: 'breezy... 💨' },
-      calm: { ja: '今日も駆け抜けよう！', en: "Let's run with the wind!" },
-      happy: { ja: 'ビューン！いい感じ！', en: 'Whoosh! Feeling great!' },
-      excited: { ja: '風に乗って最高速！', en: 'Full speed on the wind!' },
-      focused: { ja: '風を読んで集中', en: 'Reading the wind...' },
-      proud: { ja: '嵐を乗り越えた！', en: 'Conquered the storm!' },
+    shibu: {
+      sleeping: { ja: '...', en: '...' },
+      calm: { ja: '悪くない', en: 'Not bad' },
+      happy: { ja: 'まあまあ', en: 'Decent' },
+      excited: { ja: 'なかなか', en: 'Impressive' },
+      focused: { ja: '...', en: '...' },
+      proud: { ja: 'よくやった', en: 'Well done' },
     },
   };
 
   return messages[companionId][state][language];
 }
 
+// Get growth stage from level
+export function getGrowthStage(level: number): GrowthStage {
+  if (level >= GROWTH_STAGE_LEVELS.tatsujin.min) return 'tatsujin';
+  if (level >= GROWTH_STAGE_LEVELS.minarai.min) return 'minarai';
+  return 'tane';
+}
+
+// Get stage display name
+export function getGrowthStageName(stage: GrowthStage, language: 'ja' | 'en'): string {
+  const names: Record<GrowthStage, { ja: string; en: string }> = {
+    tane: { ja: 'たね', en: 'Seed' },
+    minarai: { ja: 'みならい', en: 'Apprentice' },
+    tatsujin: { ja: 'たつじん', en: 'Master' },
+  };
+  return names[stage][language];
+}
+
 // ===================================
 // Mission System Functions
+// 30 Missions: 「30秒〜5分」中心、選べる、押し付けない
 // ===================================
 
-const MISSION_TEMPLATES = {
-  daily: [
-    { titleKey: 'mission_daily_checkin', descriptionKey: 'mission_daily_checkin_desc', xpReward: 20, targetCount: 1 },
-    { titleKey: 'mission_complete_goal', descriptionKey: 'mission_complete_goal_desc', xpReward: 15, targetCount: 1 },
-    { titleKey: 'mission_visit_dashboard', descriptionKey: 'mission_visit_dashboard_desc', xpReward: 5, targetCount: 1 },
-  ],
-  weekly: [
-    { titleKey: 'mission_weekly_checkin', descriptionKey: 'mission_weekly_checkin_desc', xpReward: 50, targetCount: 1 },
-    { titleKey: 'mission_complete_3_goals', descriptionKey: 'mission_complete_3_goals_desc', xpReward: 40, targetCount: 3 },
-    { titleKey: 'mission_perfect_week', descriptionKey: 'mission_perfect_week_desc', xpReward: 100, targetCount: 1 },
-  ],
-};
+// All 30 mission definitions
+export const MISSION_DEFINITIONS: MissionDefinition[] = [
+  // ========== Quick Missions (30秒〜1分): 10 missions ==========
+  { id: 'quick_01', titleKey: 'mission_quick_01', descriptionKey: 'mission_quick_01_desc', type: 'quick', category: 'quick', difficulty: 1, durationMinutes: 0.5, xpReward: 5, eggProgressReward: 2 },
+  { id: 'quick_02', titleKey: 'mission_quick_02', descriptionKey: 'mission_quick_02_desc', type: 'quick', category: 'quick', difficulty: 1, durationMinutes: 0.5, xpReward: 5, eggProgressReward: 2 },
+  { id: 'quick_03', titleKey: 'mission_quick_03', descriptionKey: 'mission_quick_03_desc', type: 'quick', category: 'quick', difficulty: 1, durationMinutes: 0.5, xpReward: 5, eggProgressReward: 2 },
+  { id: 'quick_04', titleKey: 'mission_quick_04', descriptionKey: 'mission_quick_04_desc', type: 'quick', category: 'quick', difficulty: 1, durationMinutes: 0.5, xpReward: 5, eggProgressReward: 2 },
+  { id: 'quick_05', titleKey: 'mission_quick_05', descriptionKey: 'mission_quick_05_desc', type: 'quick', category: 'quick', difficulty: 1, durationMinutes: 0.5, xpReward: 5, eggProgressReward: 2 },
+  { id: 'quick_06', titleKey: 'mission_quick_06', descriptionKey: 'mission_quick_06_desc', type: 'quick', category: 'quick', difficulty: 1, durationMinutes: 1, xpReward: 5, eggProgressReward: 2 },
+  { id: 'quick_07', titleKey: 'mission_quick_07', descriptionKey: 'mission_quick_07_desc', type: 'quick', category: 'quick', difficulty: 1, durationMinutes: 0.5, xpReward: 5, eggProgressReward: 2 },
+  { id: 'quick_08', titleKey: 'mission_quick_08', descriptionKey: 'mission_quick_08_desc', type: 'quick', category: 'quick', difficulty: 1, durationMinutes: 0.5, xpReward: 5, eggProgressReward: 2 },
+  { id: 'quick_09', titleKey: 'mission_quick_09', descriptionKey: 'mission_quick_09_desc', type: 'quick', category: 'quick', difficulty: 1, durationMinutes: 0.5, xpReward: 5, eggProgressReward: 2 },
+  { id: 'quick_10', titleKey: 'mission_quick_10', descriptionKey: 'mission_quick_10_desc', type: 'quick', category: 'quick', difficulty: 1, durationMinutes: 0.5, xpReward: 5, eggProgressReward: 2 },
+
+  // ========== Medium Missions (2〜5分): 10 missions ==========
+  { id: 'medium_01', titleKey: 'mission_medium_01', descriptionKey: 'mission_medium_01_desc', type: 'medium', category: 'medium', difficulty: 2, durationMinutes: 3, xpReward: 15, eggProgressReward: 5 },
+  { id: 'medium_02', titleKey: 'mission_medium_02', descriptionKey: 'mission_medium_02_desc', type: 'medium', category: 'medium', difficulty: 2, durationMinutes: 3, xpReward: 15, eggProgressReward: 5 },
+  { id: 'medium_03', titleKey: 'mission_medium_03', descriptionKey: 'mission_medium_03_desc', type: 'medium', category: 'medium', difficulty: 2, durationMinutes: 2, xpReward: 15, eggProgressReward: 5 },
+  { id: 'medium_04', titleKey: 'mission_medium_04', descriptionKey: 'mission_medium_04_desc', type: 'medium', category: 'medium', difficulty: 2, durationMinutes: 2, xpReward: 15, eggProgressReward: 5 },
+  { id: 'medium_05', titleKey: 'mission_medium_05', descriptionKey: 'mission_medium_05_desc', type: 'medium', category: 'medium', difficulty: 2, durationMinutes: 2, xpReward: 15, eggProgressReward: 5 },
+  { id: 'medium_06', titleKey: 'mission_medium_06', descriptionKey: 'mission_medium_06_desc', type: 'medium', category: 'medium', difficulty: 2, durationMinutes: 2, xpReward: 15, eggProgressReward: 5 },
+  { id: 'medium_07', titleKey: 'mission_medium_07', descriptionKey: 'mission_medium_07_desc', type: 'medium', category: 'medium', difficulty: 2, durationMinutes: 2, xpReward: 15, eggProgressReward: 5 },
+  { id: 'medium_08', titleKey: 'mission_medium_08', descriptionKey: 'mission_medium_08_desc', type: 'medium', category: 'medium', difficulty: 2, durationMinutes: 3, xpReward: 15, eggProgressReward: 5 },
+  { id: 'medium_09', titleKey: 'mission_medium_09', descriptionKey: 'mission_medium_09_desc', type: 'medium', category: 'medium', difficulty: 2, durationMinutes: 2, xpReward: 15, eggProgressReward: 5 },
+  { id: 'medium_10', titleKey: 'mission_medium_10', descriptionKey: 'mission_medium_10_desc', type: 'medium', category: 'medium', difficulty: 2, durationMinutes: 5, xpReward: 20, eggProgressReward: 8 },
+
+  // ========== Weekly Missions (週次): 10 missions ==========
+  { id: 'weekly_01', titleKey: 'mission_weekly_01', descriptionKey: 'mission_weekly_01_desc', type: 'weekly', category: 'weekly', difficulty: 2, durationMinutes: 5, xpReward: 30, eggProgressReward: 10 },
+  { id: 'weekly_02', titleKey: 'mission_weekly_02', descriptionKey: 'mission_weekly_02_desc', type: 'weekly', category: 'weekly', difficulty: 2, durationMinutes: 3, xpReward: 25, eggProgressReward: 8 },
+  { id: 'weekly_03', titleKey: 'mission_weekly_03', descriptionKey: 'mission_weekly_03_desc', type: 'weekly', category: 'weekly', difficulty: 2, durationMinutes: 3, xpReward: 25, eggProgressReward: 8 },
+  { id: 'weekly_04', titleKey: 'mission_weekly_04', descriptionKey: 'mission_weekly_04_desc', type: 'weekly', category: 'weekly', difficulty: 2, durationMinutes: 3, xpReward: 25, eggProgressReward: 8 },
+  { id: 'weekly_05', titleKey: 'mission_weekly_05', descriptionKey: 'mission_weekly_05_desc', type: 'weekly', category: 'weekly', difficulty: 2, durationMinutes: 3, xpReward: 25, eggProgressReward: 8 },
+  { id: 'weekly_06', titleKey: 'mission_weekly_06', descriptionKey: 'mission_weekly_06_desc', type: 'weekly', category: 'weekly', difficulty: 2, durationMinutes: 3, xpReward: 25, eggProgressReward: 8 },
+  { id: 'weekly_07', titleKey: 'mission_weekly_07', descriptionKey: 'mission_weekly_07_desc', type: 'weekly', category: 'weekly', difficulty: 2, durationMinutes: 2, xpReward: 20, eggProgressReward: 5 },
+  { id: 'weekly_08', titleKey: 'mission_weekly_08', descriptionKey: 'mission_weekly_08_desc', type: 'weekly', category: 'weekly', difficulty: 2, durationMinutes: 2, xpReward: 20, eggProgressReward: 5 },
+  { id: 'weekly_09', titleKey: 'mission_weekly_09', descriptionKey: 'mission_weekly_09_desc', type: 'weekly', category: 'weekly', difficulty: 1, durationMinutes: 1, xpReward: 15, eggProgressReward: 5 },
+  { id: 'weekly_10', titleKey: 'mission_weekly_10', descriptionKey: 'mission_weekly_10_desc', type: 'weekly', category: 'weekly', difficulty: 1, durationMinutes: 1, xpReward: 15, eggProgressReward: 5 },
+];
 
 function getTodayStart(): string {
   const now = new Date();
@@ -622,30 +684,46 @@ function getWeekStartForMissions(): string {
   return monday.toISOString();
 }
 
-function generateMissions(type: 'daily' | 'weekly'): Mission[] {
-  const templates = MISSION_TEMPLATES[type];
+// Get mission definition by ID
+export function getMissionDefinition(missionDefId: string): MissionDefinition | undefined {
+  return MISSION_DEFINITIONS.find(m => m.id === missionDefId);
+}
+
+// Generate active missions: 2 today (1 quick + 1 medium/weekly)
+function generateActiveMissions(excludeIds: string[] = []): Mission[] {
   const now = new Date();
-  const expiresAt = type === 'daily'
-    ? new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString()
-    : new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
+  const weekEnd = new Date(now);
+  weekEnd.setDate(weekEnd.getDate() + (7 - weekEnd.getDay()));
+  weekEnd.setHours(23, 59, 59, 999);
 
-  // Pick 2-3 random missions for daily, all for weekly
-  const count = type === 'daily' ? Math.min(2, templates.length) : templates.length;
-  const shuffled = [...templates].sort(() => Math.random() - 0.5).slice(0, count);
+  const quickMissions = MISSION_DEFINITIONS.filter(m => m.type === 'quick' && !excludeIds.includes(m.id));
+  const otherMissions = MISSION_DEFINITIONS.filter(m => m.type !== 'quick' && !excludeIds.includes(m.id));
 
-  return shuffled.map((template) => ({
+  const shuffledQuick = [...quickMissions].sort(() => Math.random() - 0.5);
+  const shuffledOther = [...otherMissions].sort(() => Math.random() - 0.5);
+
+  const selected: MissionDefinition[] = [];
+  if (shuffledQuick.length > 0) selected.push(shuffledQuick[0]);
+  if (shuffledOther.length > 0) selected.push(shuffledOther[0]);
+
+  return selected.map(def => ({
     id: crypto.randomUUID(),
-    type,
-    titleKey: template.titleKey,
-    descriptionKey: template.descriptionKey,
-    xpReward: template.xpReward,
-    targetCount: template.targetCount,
-    currentCount: 0,
+    missionDefId: def.id,
+    type: def.type,
     status: 'active' as const,
     createdAt: now.toISOString(),
-    expiresAt,
+    expiresAt: weekEnd.toISOString(),
   }));
 }
+
+const DEFAULT_MISSION_PROGRESS: MissionProgress = {
+  activeMissions: [],
+  completedToday: [],
+  completedThisWeek: [],
+  lastDailyReset: '',
+  lastWeeklyReset: '',
+  weeklyMissionsCompleted: 0,
+};
 
 export async function getMissions(): Promise<MissionProgress> {
   const stored = await localforage.getItem<MissionProgress>(KEYS.MISSIONS);
@@ -654,8 +732,8 @@ export async function getMissions(): Promise<MissionProgress> {
 
   if (!stored) {
     const missions: MissionProgress = {
-      dailyMissions: generateMissions('daily'),
-      weeklyMissions: generateMissions('weekly'),
+      ...DEFAULT_MISSION_PROGRESS,
+      activeMissions: generateActiveMissions(),
       lastDailyReset: todayStart,
       lastWeeklyReset: weekStart,
     };
@@ -663,19 +741,36 @@ export async function getMissions(): Promise<MissionProgress> {
     return missions;
   }
 
-  // Check if we need to reset daily missions
+  let needsSave = false;
+
+  // Reset daily tracking
   if (stored.lastDailyReset !== todayStart) {
-    stored.dailyMissions = generateMissions('daily');
+    stored.completedToday = [];
     stored.lastDailyReset = todayStart;
+    needsSave = true;
   }
 
-  // Check if we need to reset weekly missions
+  // Reset weekly tracking
   if (stored.lastWeeklyReset !== weekStart) {
-    stored.weeklyMissions = generateMissions('weekly');
+    stored.completedThisWeek = [];
+    stored.weeklyMissionsCompleted = 0;
+    stored.activeMissions = generateActiveMissions();
     stored.lastWeeklyReset = weekStart;
+    needsSave = true;
   }
 
-  await saveMissions(stored);
+  // Ensure we have 2 active missions
+  if (stored.activeMissions.filter(m => m.status === 'active').length < 2) {
+    const existingDefIds = stored.activeMissions.map(m => m.missionDefId);
+    const newMissions = generateActiveMissions([...existingDefIds, ...stored.completedThisWeek]);
+    stored.activeMissions = [...stored.activeMissions.filter(m => m.status === 'active'), ...newMissions].slice(0, 2);
+    needsSave = true;
+  }
+
+  if (needsSave) {
+    await saveMissions(stored);
+  }
+
   return stored;
 }
 
@@ -683,36 +778,91 @@ export async function saveMissions(missions: MissionProgress): Promise<void> {
   await localforage.setItem(KEYS.MISSIONS, missions);
 }
 
-export async function updateMissionProgress(
-  missionKey: string,
-  increment: number = 1
-): Promise<{ completed: Mission[]; xpEarned: number }> {
+// Complete a mission
+export async function completeMission(missionId: string): Promise<{
+  completed: boolean;
+  xpEarned: number;
+  eggProgressEarned: number;
+  weeklyMissionsCompleted: number;
+}> {
   const missions = await getMissions();
-  const completed: Mission[] = [];
-  let xpEarned = 0;
+  const missionIndex = missions.activeMissions.findIndex(m => m.id === missionId);
 
-  const updateMission = (mission: Mission) => {
-    if (mission.titleKey === missionKey && mission.status === 'active') {
-      mission.currentCount = Math.min(mission.currentCount + increment, mission.targetCount);
-      if (mission.currentCount >= mission.targetCount) {
-        mission.status = 'completed';
-        completed.push(mission);
-        xpEarned += mission.xpReward;
-      }
-    }
-  };
+  if (missionIndex === -1) {
+    return { completed: false, xpEarned: 0, eggProgressEarned: 0, weeklyMissionsCompleted: missions.weeklyMissionsCompleted };
+  }
 
-  missions.dailyMissions.forEach(updateMission);
-  missions.weeklyMissions.forEach(updateMission);
+  const mission = missions.activeMissions[missionIndex];
+  if (mission.status !== 'active') {
+    return { completed: false, xpEarned: 0, eggProgressEarned: 0, weeklyMissionsCompleted: missions.weeklyMissionsCompleted };
+  }
+
+  const def = getMissionDefinition(mission.missionDefId);
+  if (!def) {
+    return { completed: false, xpEarned: 0, eggProgressEarned: 0, weeklyMissionsCompleted: missions.weeklyMissionsCompleted };
+  }
+
+  // Mark as completed
+  mission.status = 'completed';
+  mission.completedAt = new Date().toISOString();
+  missions.completedToday.push(mission.missionDefId);
+  missions.completedThisWeek.push(mission.missionDefId);
+  missions.weeklyMissionsCompleted += 1;
 
   await saveMissions(missions);
 
-  // Add XP to companion if missions completed
-  if (xpEarned > 0) {
-    await addCompanionXP(xpEarned);
+  // Add XP to companion
+  if (def.xpReward > 0) {
+    await addCompanionXP(def.xpReward);
   }
 
-  return { completed, xpEarned };
+  // Add egg progress
+  if (def.eggProgressReward > 0) {
+    await addProgressToAllEggs(def.eggProgressReward);
+  }
+
+  return {
+    completed: true,
+    xpEarned: def.xpReward,
+    eggProgressEarned: def.eggProgressReward,
+    weeklyMissionsCompleted: missions.weeklyMissionsCompleted,
+  };
+}
+
+// Skip/swap a mission for another
+export async function swapMission(missionId: string): Promise<Mission | null> {
+  const missions = await getMissions();
+  const missionIndex = missions.activeMissions.findIndex(m => m.id === missionId);
+
+  if (missionIndex === -1) return null;
+
+  const oldMission = missions.activeMissions[missionIndex];
+  const oldDef = getMissionDefinition(oldMission.missionDefId);
+
+  // Get same type replacement
+  const excludeIds = [...missions.activeMissions.map(m => m.missionDefId), ...missions.completedThisWeek, oldMission.missionDefId];
+  const sametype = MISSION_DEFINITIONS.filter(m => m.type === oldDef?.type && !excludeIds.includes(m.id));
+
+  if (sametype.length === 0) return null;
+
+  const newDef = sametype[Math.floor(Math.random() * sametype.length)];
+  const now = new Date();
+  const weekEnd = new Date(now);
+  weekEnd.setDate(weekEnd.getDate() + (7 - weekEnd.getDay()));
+
+  const newMission: Mission = {
+    id: crypto.randomUUID(),
+    missionDefId: newDef.id,
+    type: newDef.type,
+    status: 'active',
+    createdAt: now.toISOString(),
+    expiresAt: weekEnd.toISOString(),
+  };
+
+  missions.activeMissions[missionIndex] = newMission;
+  await saveMissions(missions);
+
+  return newMission;
 }
 
 // ===================================
@@ -726,7 +876,7 @@ export const EGG_TYPES: Record<EggType, EggTypeInfo> = {
     description: { ja: '穏やかなエネルギーを感じる', en: 'You sense a calm energy' },
     emoji: '🥚',
     crackEmoji: '🐣',
-    possibleCompanions: ['sprout', 'mochi', 'nimbus', 'pebble'],
+    possibleCompanions: ['kotsuri', 'nonbi', 'haruka', 'shibu'],
   },
   energetic: {
     type: 'energetic',
@@ -734,7 +884,7 @@ export const EGG_TYPES: Record<EggType, EggTypeInfo> = {
     description: { ja: '元気いっぱいに揺れている', en: 'It wiggles energetically' },
     emoji: '🪺',
     crackEmoji: '🐥',
-    possibleCompanions: ['kaze', 'glim', 'ember', 'ripple'],
+    possibleCompanions: ['torai', 'nikoru', 'kiri', 'mitemi'],
   },
   curious: {
     type: 'curious',
@@ -742,7 +892,7 @@ export const EGG_TYPES: Record<EggType, EggTypeInfo> = {
     description: { ja: '何が生まれるかわからない', en: 'Who knows what will hatch?' },
     emoji: '✨',
     crackEmoji: '🌟',
-    possibleCompanions: ['ember', 'sprout', 'nimbus', 'pebble', 'ripple', 'glim', 'mochi', 'kaze'],
+    possibleCompanions: ['kotsuri', 'torai', 'nonbi', 'kiri', 'haruka', 'mitemi', 'nikoru', 'shibu'],
   },
 };
 
@@ -860,7 +1010,7 @@ export async function hatchEgg(eggId: string): Promise<HatchingResult | null> {
   let companionId: CompanionId;
 
   if (isRare) {
-    const allCompanions: CompanionId[] = ['ember', 'sprout', 'nimbus', 'pebble', 'ripple', 'glim', 'mochi', 'kaze'];
+    const allCompanions: CompanionId[] = ['kotsuri', 'torai', 'nonbi', 'kiri', 'haruka', 'mitemi', 'nikoru', 'shibu'];
     companionId = allCompanions[Math.floor(Math.random() * allCompanions.length)];
   } else {
     companionId = possibleCompanions[Math.floor(Math.random() * possibleCompanions.length)];
@@ -908,6 +1058,9 @@ export async function addToCollection(companionId: CompanionId, stage: number, s
   }
 }
 
+// All companion IDs for reference
+export const ALL_COMPANION_IDS: CompanionId[] = ['kotsuri', 'torai', 'nonbi', 'kiri', 'haruka', 'mitemi', 'nikoru', 'shibu'];
+
 export async function getCollectionStats(): Promise<{
   totalCompanions: number;
   uniqueCompanions: number;
@@ -916,8 +1069,7 @@ export async function getCollectionStats(): Promise<{
   completionPercentage: number;
 }> {
   const data = await getCollectionData();
-  const allCompanions: CompanionId[] = ['ember', 'sprout', 'nimbus', 'pebble', 'ripple', 'glim', 'mochi', 'kaze'];
-  const totalPossible = allCompanions.length * 3; // 8 companions x 3 stages
+  const totalPossible = ALL_COMPANION_IDS.length * 3; // 8 companions x 3 stages
 
   const uniqueCompanions = new Set(data.entries.map(e => e.companionId)).size;
   const completionPercentage = Math.round((data.entries.length / totalPossible) * 100);
@@ -939,3 +1091,163 @@ export const EGG_PROGRESS_VALUES = {
   dailyVisit: 3,
   missionComplete: 8,
 } as const;
+
+// ===================================
+// Egg Acquisition System (たまご入手経路)
+// MVP: 週次ふりかえり完了 / ミッション3個達成 / 復帰ボーナス
+// ===================================
+
+const DEFAULT_EGG_ACQUISITION_STATE: EggAcquisitionState = {
+  weeklyReviewEggThisWeek: false,
+  missionsEggThisWeek: false,
+  lastActiveDate: null,
+  acquisitionHistory: [],
+};
+
+export async function getEggAcquisitionState(): Promise<EggAcquisitionState> {
+  const state = await localforage.getItem<EggAcquisitionState>(KEYS.EGG_ACQUISITION);
+  const weekStart = getWeekStartForMissions();
+
+  if (!state) {
+    const newState = { ...DEFAULT_EGG_ACQUISITION_STATE };
+    await saveEggAcquisitionState(newState);
+    return newState;
+  }
+
+  // Check if we need to reset weekly flags
+  const lastHistory = state.acquisitionHistory[state.acquisitionHistory.length - 1];
+  if (!lastHistory || lastHistory.weekStart !== weekStart) {
+    // New week - reset weekly flags
+    state.weeklyReviewEggThisWeek = false;
+    state.missionsEggThisWeek = false;
+    await saveEggAcquisitionState(state);
+  }
+
+  return state;
+}
+
+export async function saveEggAcquisitionState(state: EggAcquisitionState): Promise<void> {
+  await localforage.setItem(KEYS.EGG_ACQUISITION, state);
+}
+
+// Check and award egg for weekly review completion
+export async function checkWeeklyReviewEggReward(): Promise<{
+  awarded: boolean;
+  eggId?: string;
+  reason: 'already_received' | 'max_eggs' | 'awarded';
+}> {
+  const state = await getEggAcquisitionState();
+
+  // Already received this week
+  if (state.weeklyReviewEggThisWeek) {
+    return { awarded: false, reason: 'already_received' };
+  }
+
+  // Try to create egg
+  const egg = await createEgg();
+  if (!egg) {
+    return { awarded: false, reason: 'max_eggs' };
+  }
+
+  // Record acquisition
+  state.weeklyReviewEggThisWeek = true;
+  state.acquisitionHistory.push({
+    source: 'weekly_review',
+    weekStart: getWeekStartForMissions(),
+    acquiredAt: new Date().toISOString(),
+    eggId: egg.id,
+  });
+  await saveEggAcquisitionState(state);
+
+  return { awarded: true, eggId: egg.id, reason: 'awarded' };
+}
+
+// Check and award egg for 3 missions completed this week
+export async function checkMissionsEggReward(weeklyMissionsCompleted: number): Promise<{
+  awarded: boolean;
+  eggId?: string;
+  reason: 'not_enough' | 'already_received' | 'max_eggs' | 'awarded';
+}> {
+  // Need at least 3 missions
+  if (weeklyMissionsCompleted < 3) {
+    return { awarded: false, reason: 'not_enough' };
+  }
+
+  const state = await getEggAcquisitionState();
+
+  // Already received this week
+  if (state.missionsEggThisWeek) {
+    return { awarded: false, reason: 'already_received' };
+  }
+
+  // Try to create egg
+  const egg = await createEgg();
+  if (!egg) {
+    return { awarded: false, reason: 'max_eggs' };
+  }
+
+  // Record acquisition
+  state.missionsEggThisWeek = true;
+  state.acquisitionHistory.push({
+    source: 'missions_3',
+    weekStart: getWeekStartForMissions(),
+    acquiredAt: new Date().toISOString(),
+    eggId: egg.id,
+  });
+  await saveEggAcquisitionState(state);
+
+  return { awarded: true, eggId: egg.id, reason: 'awarded' };
+}
+
+// Check and award return bonus egg (7+ days inactive)
+export async function checkReturnBonusEgg(): Promise<{
+  awarded: boolean;
+  eggId?: string;
+  daysAway: number;
+  reason: 'not_away_long_enough' | 'max_eggs' | 'awarded';
+}> {
+  const state = await getEggAcquisitionState();
+  const now = new Date();
+  const today = now.toISOString().split('T')[0];
+
+  // Calculate days away
+  let daysAway = 0;
+  if (state.lastActiveDate) {
+    const lastActive = new Date(state.lastActiveDate);
+    const diffTime = now.getTime() - lastActive.getTime();
+    daysAway = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  }
+
+  // Update last active date
+  state.lastActiveDate = today;
+  await saveEggAcquisitionState(state);
+
+  // Need 7+ days away for return bonus
+  if (daysAway < 7) {
+    return { awarded: false, daysAway, reason: 'not_away_long_enough' };
+  }
+
+  // Try to create egg
+  const egg = await createEgg();
+  if (!egg) {
+    return { awarded: false, daysAway, reason: 'max_eggs' };
+  }
+
+  // Record acquisition
+  state.acquisitionHistory.push({
+    source: 'return_bonus',
+    weekStart: getWeekStartForMissions(),
+    acquiredAt: new Date().toISOString(),
+    eggId: egg.id,
+  });
+  await saveEggAcquisitionState(state);
+
+  return { awarded: true, eggId: egg.id, daysAway, reason: 'awarded' };
+}
+
+// Track daily activity for return bonus calculation
+export async function trackDailyActivity(): Promise<void> {
+  const state = await getEggAcquisitionState();
+  state.lastActiveDate = new Date().toISOString().split('T')[0];
+  await saveEggAcquisitionState(state);
+}

@@ -13,7 +13,7 @@ import {
 } from 'recharts';
 import { PenSquare, Target, CheckCircle2 } from 'lucide-react';
 import { useSettings } from '../hooks/useSettings';
-import { getCheckIns, getGoals, getGoalProgress, getUserStats, toggleGoalProgress, updateGoalCompletionStats, getCompanionData, getCompanionSettings, getMissions, updateMissionProgress, addCompanionXP, getCollectionSettings, addProgressToAllEggs, EGG_PROGRESS_VALUES } from '../lib/storage';
+import { getCheckIns, getGoals, getGoalProgress, getUserStats, toggleGoalProgress, updateGoalCompletionStats, getCompanionData, getCompanionSettings, getMissions, addCompanionXP, getCollectionSettings, addProgressToAllEggs, EGG_PROGRESS_VALUES } from '../lib/storage';
 import { getLastNWeeks, getWeekStart, formatDate } from '../lib/date';
 import { WeeklySummaryCard, BadgeDisplay, NewBadgeNotification } from '../components/gamification';
 import { CompanionWidget, CompanionEmptyState, MissionList, EggSummary } from '../components/companion';
@@ -65,11 +65,6 @@ export function Dashboard() {
     setCollectionSettings(collSettings);
     setMissions(missionData);
 
-    // Update mission progress for visiting dashboard
-    if (compSettings?.enabled) {
-      await updateMissionProgress('mission_visit_dashboard');
-    }
-
     const weeks = getLastNWeeks(8);
 
     const data: ChartData[] = weeks.map((week) => {
@@ -115,8 +110,6 @@ export function Dashboard() {
     // Award XP to companion for completing a goal
     if (companionSettings?.enabled && companionData) {
       await addCompanionXP(10); // +10 XP for completing a goal
-      await updateMissionProgress('mission_complete_goal');
-      await updateMissionProgress('mission_complete_3_goals');
     }
 
     // Add progress to eggs when completing a goal
@@ -182,14 +175,9 @@ export function Dashboard() {
         <MissionList
           missions={missions}
           language={settings.language}
-          translations={{
-            dailyMissions: t.missions.dailyMissions,
-            weeklyMissions: t.missions.weeklyMissions,
-            completed: t.missions.completed,
-            xpReward: t.missions.xpReward,
-            missionTitles: t.missions.missionTitles,
-            missionDescriptions: t.missions.missionDescriptions,
-          }}
+          translations={t.missions as typeof t.missions & { [key: string]: string }}
+          onMissionComplete={() => loadData()}
+          onEggReceived={() => loadData()}
         />
       )}
 
