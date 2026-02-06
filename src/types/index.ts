@@ -52,6 +52,9 @@ export interface WizardDraft {
   savedAt: string;
 }
 
+// Support Style for companion messages
+export type SupportStyle = 'praise' | 'fact' | 'empathy' | 'minimal';
+
 export interface Settings {
   theme: 'light' | 'dark';
   language: 'ja' | 'en';
@@ -61,6 +64,7 @@ export interface Settings {
   collectionEnabled: boolean;      // Show collection (eggs/gallery)
   animationsEnabled: boolean;      // Companion animations
   effectsSkipEnabled: boolean;     // Skip hatching/evolution effects
+  supportStyle: SupportStyle;      // Companion message style
 }
 
 // Growth Stage Names (たね→みならい→たつじん)
