@@ -51,28 +51,40 @@ export function EggProgressCompact({ language }: EggProgressCompactProps) {
 
   return (
     <div className="egg-progress-compact">
+      <div className="egg-progress-header">
+        <Egg size={16} />
+        <span className="egg-progress-title">
+          {language === 'ja' ? 'たまご' : 'Egg'}
+        </span>
+        {eggs.length > 1 && (
+          <span className="egg-count-badge">×{eggs.length}</span>
+        )}
+      </div>
+
       <div className="egg-progress-main">
         <span className="egg-progress-emoji">
           {isReady ? eggTypeInfo.crackEmoji : eggTypeInfo.emoji}
         </span>
         <div className="egg-progress-bar-container">
+          <div className="egg-progress-info">
+            <span className="egg-type-label">
+              {eggTypeInfo.name[language]}
+            </span>
+            <span className="egg-progress-text">
+              {primaryEgg.progress}%
+            </span>
+          </div>
           <div className="egg-progress-bar">
             <div
               className={`egg-progress-fill ${isReady ? 'ready' : ''}`}
               style={{ width: `${primaryEgg.progress}%` }}
             />
           </div>
-          <span className="egg-progress-text">
-            {primaryEgg.progress}%
-          </span>
         </div>
         {isReady && (
           <Link to="/settings" className="egg-hatch-link">
             {language === 'ja' ? '孵化する' : 'Hatch'}
           </Link>
-        )}
-        {eggs.length > 1 && (
-          <span className="egg-count-badge">+{eggs.length - 1}</span>
         )}
       </div>
 
@@ -82,7 +94,7 @@ export function EggProgressCompact({ language }: EggProgressCompactProps) {
           onClick={() => setShowHint(!showHint)}
           aria-expanded={showHint}
         >
-          {language === 'ja' ? 'どう進める？' : 'How to progress?'}
+          {language === 'ja' ? '進め方を見る' : 'How to progress'}
           {showHint ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
         </button>
       )}

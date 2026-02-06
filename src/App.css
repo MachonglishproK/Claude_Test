@@ -1713,6 +1713,21 @@ textarea.error {
   padding: var(--spacing-md);
 }
 
+.egg-progress-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-sm);
+  color: var(--text-secondary);
+}
+
+.egg-progress-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
 .egg-progress-empty {
   display: flex;
   align-items: center;
@@ -1737,18 +1752,31 @@ textarea.error {
 }
 
 .egg-progress-emoji {
-  font-size: 1.25rem;
+  font-size: 1.5rem;
+  line-height: 1;
 }
 
 .egg-progress-bar-container {
   flex: 1;
   display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.egg-progress-info {
+  display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  justify-content: space-between;
+}
+
+.egg-type-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
 }
 
 .egg-progress-bar {
-  flex: 1;
+  width: 100%;
   height: 8px;
   background-color: var(--bg-secondary);
   border-radius: 4px;
@@ -1775,8 +1803,9 @@ textarea.error {
 .egg-progress-text {
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--text-secondary);
-  min-width: 36px;
+  color: var(--accent-color);
+  min-width: 40px;
+  text-align: right;
 }
 
 .egg-hatch-link {
@@ -1784,9 +1813,10 @@ textarea.error {
   color: var(--success-color);
   font-weight: 600;
   text-decoration: none;
-  padding: 2px 8px;
+  padding: 4px 10px;
   background-color: rgba(76, 175, 80, 0.1);
   border-radius: var(--radius-sm);
+  white-space: nowrap;
 }
 
 .egg-count-badge {
@@ -1795,6 +1825,7 @@ textarea.error {
   color: var(--text-secondary);
   padding: 2px 6px;
   border-radius: 10px;
+  margin-left: auto;
 }
 
 .egg-hint-toggle {
@@ -1845,14 +1876,75 @@ textarea.error {
 }
 
 .cockpit-goals h3 {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
   margin: 0 0 var(--spacing-sm) 0;
-  font-size: 0.875rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   color: var(--text-secondary);
+}
+
+.cockpit-goals .goal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cockpit-goals .goal-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  border-bottom: none;
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-secondary);
+  transition: background-color 0.15s;
+}
+
+.cockpit-goals .goal-item:hover {
+  background-color: var(--border-color);
+}
+
+.cockpit-goals .goal-quick-check {
+  width: 28px;
+  height: 28px;
+  border: 2px solid var(--border-color);
+  border-radius: 50%;
+  background-color: var(--bg-card);
+  color: transparent;
+  transition: all 0.15s;
+}
+
+.cockpit-goals .goal-quick-check:hover {
+  border-color: var(--success-color);
+  color: var(--success-color);
+  background-color: rgba(76, 175, 80, 0.1);
+}
+
+.cockpit-goals .goal-title {
+  flex: 1;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cockpit-goals .goal-category {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  background-color: var(--bg-card);
+  padding: 2px 8px;
+  border-radius: 10px;
 }
 
 .cockpit-goals .goal-item.more-goals {
   justify-content: center;
-  border-top: 1px dashed var(--border-color);
+  background-color: transparent;
   padding-top: var(--spacing-sm);
   margin-top: var(--spacing-xs);
 }
@@ -1861,6 +1953,17 @@ textarea.error {
   color: var(--accent-color);
   text-decoration: none;
   font-size: 0.875rem;
+}
+
+.cockpit-goals .goal-item.more-goals a:hover {
+  text-decoration: underline;
+}
+
+.cockpit-goals .no-data {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  padding: var(--spacing-sm) 0;
 }
 
 /* Cockpit Charts Section */
@@ -1895,40 +1998,12 @@ textarea.error {
   padding-top: 0;
 }
 
-/* Cockpit Responsive */
+/* Cockpit Responsive - Single column layout for clarity */
 @media (min-width: 768px) {
   .dashboard.cockpit {
     gap: var(--spacing-lg);
-  }
-
-  .next-action-cta {
-    max-width: 400px;
+    max-width: 640px;
     margin: 0 auto;
-  }
-
-  .egg-progress-compact {
-    max-width: 400px;
-    margin: 0 auto;
-  }
-}
-
-@media (min-width: 1280px) {
-  .dashboard.cockpit {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--spacing-lg);
-  }
-
-  .dashboard.cockpit > .companion-widget,
-  .dashboard.cockpit > .next-action-wrapper,
-  .dashboard.cockpit > .dashboard-badges,
-  .dashboard.cockpit > .cockpit-charts {
-    grid-column: 1 / -1;
-  }
-
-  .dashboard.cockpit > .next-action-wrapper {
-    max-width: 500px;
-    justify-self: center;
   }
 }
 
