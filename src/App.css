@@ -2007,6 +2007,81 @@ textarea.error {
   }
 }
 
+/* Cockpit Mobile Responsive */
+@media (max-width: 640px) {
+  .dashboard.cockpit {
+    gap: var(--spacing-sm);
+  }
+
+  /* Next Action CTA - smaller padding on mobile */
+  .next-action-cta {
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+
+  .next-action-label {
+    font-size: 0.875rem;
+  }
+
+  .next-action-desc {
+    font-size: 0.7rem;
+  }
+
+  /* Egg Progress - compact on mobile */
+  .egg-progress-compact {
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+
+  .egg-progress-emoji {
+    font-size: 1.25rem;
+  }
+
+  .egg-type-label {
+    font-size: 0.8rem;
+  }
+
+  .egg-progress-text {
+    font-size: 0.7rem;
+  }
+
+  /* Goals section - tighter spacing on mobile */
+  .cockpit-goals {
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+
+  .cockpit-goals .goal-item {
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+
+  .cockpit-goals .goal-quick-check {
+    width: 24px;
+    height: 24px;
+  }
+
+  .cockpit-goals .goal-title {
+    font-size: 0.8rem;
+  }
+
+  .cockpit-goals .goal-category {
+    font-size: 0.65rem;
+    padding: 1px 6px;
+  }
+
+  /* Charts section - smaller toggle */
+  .cockpit-section-toggle {
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: 0.875rem;
+  }
+
+  /* Weekly summary - adjust grid */
+  .weekly-summary-card {
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+
+  .weekly-summary-digest .digest-line {
+    font-size: 0.8rem;
+  }
+}
+
 /* Animation for completion feedback */
 .goal-quick-check.completing {
   animation: check-complete 0.3s ease-out;
